@@ -72,13 +72,24 @@
 @interface H6Style : HeadingStyleBase
 @end
 
-@interface UnorderedListStyle : StyleBase
+@interface ListStyleBase : StyleBase
+- (CGFloat)cumulativeHeadIndentForChain:(NSArray<NSTextList *> *)chain;
+- (void)modifyListNestingInRange:(NSRange)range
+                      increasing:(BOOL)increasingNesting;
+- (void)add:(NSRange)range
+          withValue:(NSString *)value
+    forcingNewLevel:(BOOL)forcingNewLevel
+         withTyping:(BOOL)withTyping
+     withDirtyRange:(BOOL)withDirtyRange;
 @end
 
-@interface OrderedListStyle : StyleBase
+@interface UnorderedListStyle : ListStyleBase
 @end
 
-@interface CheckboxListStyle : StyleBase
+@interface OrderedListStyle : ListStyleBase
+@end
+
+@interface CheckboxListStyle : ListStyleBase
 - (void)toggleWithChecked:(BOOL)checked range:(NSRange)range;
 - (void)addWithChecked:(BOOL)checked
                  range:(NSRange)range

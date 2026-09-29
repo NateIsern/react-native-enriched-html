@@ -26,20 +26,12 @@
   return YES;
 }
 
-- (CGFloat)headIndent {
-  return [self.host.config checkboxListMarginLeft] +
-         [self.host.config checkboxListGapWidth] +
-         [self.host.config checkboxListBoxSize];
-}
-
 - (CGFloat)calculateMinimumLineHeight:(CGFloat)currentLineHeight {
   CGFloat boxSize = [self.host.config checkboxListBoxSize];
   return MAX(currentLineHeight, boxSize);
 }
 
 - (void)applyStyling:(NSRange)range {
-  CGFloat listHeadIndent = [self headIndent];
-
   [self.host.textView.textStorage
       enumerateAttribute:NSParagraphStyleAttributeName
                  inRange:range
@@ -48,6 +40,10 @@
                            BOOL *_Nonnull stop) {
                 NSMutableParagraphStyle *pStyle =
                     [(NSParagraphStyle *)value mutableCopy];
+                NSArray<NSTextList *> *chain =
+                    [TextListsUtils listChainInArray:pStyle.textLists];
+                CGFloat listHeadIndent =
+                    [self cumulativeHeadIndentForChain:chain];
                 pStyle.headIndent = listHeadIndent;
                 pStyle.firstLineHeadIndent = listHeadIndent;
                 pStyle.minimumLineHeight =
@@ -68,20 +64,14 @@
       [attributes[NSParagraphStyleAttributeName] mutableCopy];
   if (pStyle == nil)
     return;
-  CGFloat indent = [self headIndent];
+  NSArray<NSTextList *> *chain =
+      [TextListsUtils listChainInArray:pStyle.textLists];
+  CGFloat indent = [self cumulativeHeadIndentForChain:chain];
   pStyle.headIndent = indent;
   pStyle.firstLineHeadIndent = indent;
   pStyle.minimumLineHeight =
       [self calculateMinimumLineHeight:pStyle.minimumLineHeight];
   attributes[NSParagraphStyleAttributeName] = pStyle;
-}
-
-- (BOOL)styleCondition:(id)value range:(NSRange)range {
-  NSParagraphStyle *pStyle = (NSParagraphStyle *)value;
-  if (pStyle == nil)
-    return NO;
-  return [TextListsUtils textLists:pStyle.textLists
-                    containsPrefix:[self getMarkerPrefix]];
 }
 
 - (void)toggleWithChecked:(BOOL)checked range:(NSRange)range {
@@ -109,15 +99,15 @@
       withDirtyRange:withDirtyRange];
 }
 
-// During dirty range re-application the default add: would use getValue
-// (EnrichedCheckbox0) and lose the checked state. Instead, read the original
-// marker format from the saved StylePair
 - (void)reapplyFromStylePair:(StylePair *)pair {
   NSRange range = [pair.rangeValue rangeValue];
   NSParagraphStyle *savedPStyle = (NSParagraphStyle *)pair.styleValue;
-  BOOL checked = [TextListsUtils textLists:savedPStyle.textLists
-                             containsValue:@"EnrichedCheckbox1"];
+  NSString *ownFormat =
+      [TextListsUtils deepestListMarkerFormatInArray:savedPStyle.textLists];
+  BOOL checked = [ownFormat isEqualToString:@"EnrichedCheckbox1"];
   [self addWithChecked:checked range:range withTyping:NO withDirtyRange:NO];
+  // restore nested list metadata
+  [self restoreListChainFromStylePair:pair range:range];
 }
 
 - (void)toggleCheckedAt:(NSUInteger)location
@@ -130,11 +120,9 @@
       [self.host.textView.textStorage attribute:NSParagraphStyleAttributeName
                                         atIndex:location
                                  effectiveRange:NULL];
-  NSTextList *list =
-      [TextListsUtils firstTextListWithPrefix:[self getMarkerPrefix]
-                                      inArray:pStyle.textLists];
-  BOOL isCurrentlyChecked =
-      [list.markerFormat isEqualToString:@"EnrichedCheckbox1"];
+  NSString *ownFormat =
+      [TextListsUtils deepestListMarkerFormatInArray:pStyle.textLists];
+  BOOL isCurrentlyChecked = [ownFormat isEqualToString:@"EnrichedCheckbox1"];
 
   NSRange paragraphRange = [self.host.textView.textStorage.string
       paragraphRangeForRange:NSMakeRange(location, 0)];
@@ -155,8 +143,9 @@
                                         atIndex:location
                                  effectiveRange:NULL];
 
-  return [TextListsUtils textLists:style.textLists
-                     containsValue:@"EnrichedCheckbox1"];
+  NSString *ownFormat =
+      [TextListsUtils deepestListMarkerFormatInArray:style.textLists];
+  return [ownFormat isEqualToString:@"EnrichedCheckbox1"];
 }
 
 - (BOOL)handleNewlinesInRange:(NSRange)range replacementText:(NSString *)text {

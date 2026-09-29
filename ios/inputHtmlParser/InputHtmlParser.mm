@@ -182,6 +182,12 @@
             }
           }
         }
+      } else if ([baseStyle isList]) {
+        [(ListStyleBase *)baseStyle add:styleRange
+                              withValue:[baseStyle getValue]
+                        forcingNewLevel:YES
+                             withTyping:NO
+                         withDirtyRange:NO];
       } else {
         [baseStyle add:styleRange
                 withTyping:shouldAddTypingAttr

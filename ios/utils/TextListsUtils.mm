@@ -90,4 +90,58 @@
   return nil;
 }
 
++ (NSArray<NSTextList *> *_Nonnull)listChainInArray:
+    (NSArray<NSTextList *> *_Nullable)textLists {
+  NSMutableArray<NSTextList *> *chain = [NSMutableArray array];
+  for (NSTextList *list in textLists) {
+    if (![list.markerFormat hasPrefix:@"EnrichedAlignment"]) {
+      [chain addObject:list];
+    }
+  }
+  return chain;
+}
+
++ (NSInteger)listDepthInArray:(NSArray<NSTextList *> *_Nullable)textLists {
+  return [self listChainInArray:textLists].count;
+}
+
++ (NSString *_Nullable)deepestListMarkerFormatInArray:
+    (NSArray<NSTextList *> *_Nullable)textLists {
+  return [self listChainInArray:textLists].lastObject.markerFormat;
+}
+
++ (NSArray<NSTextList *> *_Nonnull)
+    textListsByAppendingToChain:(NSString *_Nonnull)value
+                        toArray:(NSArray<NSTextList *> *_Nullable)existing {
+  NSMutableArray<NSTextList *> *updated =
+      existing ? [existing mutableCopy] : [NSMutableArray array];
+  [updated addObject:[[NSTextList alloc] initWithMarkerFormat:value options:0]];
+  return updated;
+}
+
++ (NSArray<NSTextList *> *_Nonnull)textListsByRemovingDeepestChainEntry:
+    (NSArray<NSTextList *> *_Nullable)existing {
+  NSArray<NSTextList *> *chain = [self listChainInArray:existing];
+  if (chain.count == 0) {
+    return existing ?: @[];
+  }
+
+  NSMutableArray<NSTextList *> *updated =
+      existing ? [existing mutableCopy] : [NSMutableArray array];
+  NSUInteger index = [updated indexOfObjectIdenticalTo:chain.lastObject];
+  if (index != NSNotFound) {
+    [updated removeObjectAtIndex:index];
+  }
+  return updated;
+}
+
++ (NSArray<NSTextList *> *_Nonnull)
+    textListsByReplacingDeepestChainEntry:(NSString *_Nonnull)value
+                                  toArray:(NSArray<NSTextList *> *_Nullable)
+                                              existing {
+  NSArray<NSTextList *> *withoutDeepest =
+      [self textListsByRemovingDeepestChainEntry:existing];
+  return [self textListsByAppendingToChain:value toArray:withoutDeepest];
+}
+
 @end

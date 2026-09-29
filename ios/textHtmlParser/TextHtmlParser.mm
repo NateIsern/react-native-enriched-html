@@ -124,6 +124,12 @@
           }
         }
       }
+    } else if ([style isList]) {
+      [(ListStyleBase *)style add:styleRange
+                        withValue:[style getValue]
+                  forcingNewLevel:YES
+                       withTyping:NO
+                   withDirtyRange:NO];
     } else {
       [style add:styleRange withTyping:NO withDirtyRange:NO];
     }
