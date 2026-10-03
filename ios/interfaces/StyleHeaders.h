@@ -90,7 +90,9 @@
 @end
 
 @interface CheckboxListStyle : ListStyleBase
-- (void)toggleWithChecked:(BOOL)checked range:(NSRange)range;
+- (void)toggleWithChecked:(BOOL)checked
+                    range:(NSRange)range
+     withConflictReplaced:(BOOL)conflictReplaced;
 - (void)addWithChecked:(BOOL)checked
                  range:(NSRange)range
             withTyping:(BOOL)withTyping

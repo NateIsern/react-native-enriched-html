@@ -67,6 +67,10 @@
   return [self.host.textView.textStorage.string paragraphRangeForRange:range];
 }
 
+- (void)toggle:(NSRange)range withConflictReplaced:(BOOL)conflictReplaced {
+  [self toggle:range];
+}
+
 - (void)toggle:(NSRange)range {
   NSRange actualRange = [self actualUsedRange:range];
 

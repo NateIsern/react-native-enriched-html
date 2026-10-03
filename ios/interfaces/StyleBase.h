@@ -19,6 +19,7 @@
 - (instancetype)initWithHost:(id<EnrichedViewHost>)host;
 - (NSRange)actualUsedRange:(NSRange)range;
 - (void)toggle:(NSRange)range;
+- (void)toggle:(NSRange)range withConflictReplaced:(BOOL)conflictReplaced;
 - (void)add:(NSRange)range
         withTyping:(BOOL)withTyping
     withDirtyRange:(BOOL)withDirtyRange;

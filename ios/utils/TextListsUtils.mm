@@ -144,4 +144,51 @@
   return [self textListsByAppendingToChain:value toArray:withoutDeepest];
 }
 
++ (NSArray *_Nonnull)snapshotTextListsInRange:(NSRange)range
+                                  textStorage:
+                                      (NSTextStorage *_Nonnull)textStorage {
+  NSMutableArray *snapshot = [NSMutableArray array];
+  if (NSMaxRange(range) > textStorage.length) {
+    return snapshot;
+  }
+  NSRange paragraphsRange = [textStorage.string paragraphRangeForRange:range];
+  [textStorage
+      enumerateAttribute:NSParagraphStyleAttributeName
+                 inRange:paragraphsRange
+                 options:0
+              usingBlock:^(id _Nullable value, NSRange subRange,
+                           BOOL *_Nonnull stop) {
+                NSParagraphStyle *pStyle = (NSParagraphStyle *)value;
+                if (pStyle == nil) {
+                  return;
+                }
+                [snapshot addObject:@[
+                  [NSValue valueWithRange:subRange], pStyle.textLists ?: @[]
+                ]];
+              }];
+  return snapshot;
+}
+
++ (void)restoreTextListsSnapshot:(NSArray *_Nonnull)snapshot
+                     textStorage:(NSTextStorage *_Nonnull)textStorage {
+  for (NSArray *entry in snapshot) {
+    NSRange range = [entry[0] rangeValue];
+    if (NSMaxRange(range) > textStorage.length) {
+      continue;
+    }
+    NSParagraphStyle *current =
+        [textStorage attribute:NSParagraphStyleAttributeName
+                       atIndex:range.location
+                effectiveRange:NULL];
+    if (current == nil) {
+      continue;
+    }
+    NSMutableParagraphStyle *pStyle = [current mutableCopy];
+    pStyle.textLists = entry[1];
+    [textStorage addAttribute:NSParagraphStyleAttributeName
+                        value:pStyle
+                        range:range];
+  }
+}
+
 @end

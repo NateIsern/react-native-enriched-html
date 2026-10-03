@@ -1560,10 +1560,13 @@ Class<RCTComponentViewProtocol> EnrichedTextInputViewCls(void) {
   if ([style isParagraph]) {
     range = [textView.textStorage.string paragraphRangeForRange:range];
   }
+  BOOL conflictPresent = [StyleUtils conflictPresent:type
+                                               range:range
+                                             forHost:self];
   if ([StyleUtils handleStyleBlocksAndConflicts:type
                                           range:range
                                         forHost:self]) {
-    [style toggle:range];
+    [style toggle:range withConflictReplaced:conflictPresent];
     [self anyTextMayHaveBeenModified];
   }
 }
@@ -1576,10 +1579,15 @@ Class<RCTComponentViewProtocol> EnrichedTextInputViewCls(void) {
   }
   NSRange range = [textView.textStorage.string
       paragraphRangeForRange:textView.selectedRange];
+  BOOL conflictPresent = [StyleUtils conflictPresent:[CheckboxListStyle getType]
+                                               range:range
+                                             forHost:self];
   if ([StyleUtils handleStyleBlocksAndConflicts:[CheckboxListStyle getType]
                                           range:range
                                         forHost:self]) {
-    [style toggleWithChecked:checked range:range];
+    [style toggleWithChecked:checked
+                       range:range
+        withConflictReplaced:conflictPresent];
     [self anyTextMayHaveBeenModified];
   }
 }

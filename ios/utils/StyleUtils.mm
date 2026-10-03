@@ -181,6 +181,15 @@
   return [dict copy];
 }
 
++ (BOOL)conflictPresent:(StyleType)type
+                  range:(NSRange)range
+                forHost:(id<EnrichedViewHost>)host {
+  return [self getPresentStyleTypesFrom:host.conflictingStyles[@(type)]
+                                  range:range
+                                forHost:host]
+             .count != 0;
+}
+
 // returns false when style shouldn't be applied and true when it can be
 + (BOOL)isStyleBlocked:(StyleType)type
                  range:(NSRange)range

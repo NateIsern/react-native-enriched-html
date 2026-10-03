@@ -68,4 +68,14 @@
                                   toArray:(NSArray<NSTextList *> *_Nullable)
                                               existing;
 
+// Captures textLists of every paragraph overlapping range, so they can be put
+// back with restoreTextListsSnapshot:inTextStorage:.
++ (NSArray *_Nonnull)snapshotTextListsInRange:(NSRange)range
+                                  textStorage:
+                                      (NSTextStorage *_Nonnull)textStorage;
+
+// Restores textLists captured by snapshotTextListsInRange:textStorage:.
++ (void)restoreTextListsSnapshot:(NSArray *_Nonnull)snapshot
+                     textStorage:(NSTextStorage *_Nonnull)textStorage;
+
 @end

@@ -74,8 +74,23 @@
   attributes[NSParagraphStyleAttributeName] = pStyle;
 }
 
-- (void)toggleWithChecked:(BOOL)checked range:(NSRange)range {
+- (void)toggleWithChecked:(BOOL)checked
+                    range:(NSRange)range
+     withConflictReplaced:(BOOL)conflictReplaced {
   NSRange actualRange = [self actualUsedRange:range];
+
+  // during the toggle, a conflicting style (a different list)
+  // might have been removed. If so, we just add a new value to
+  // the textLists. Otherwise we follow the base flow
+  if (conflictReplaced) {
+    [self add:actualRange
+              withValue:checked ? @"EnrichedCheckbox1" : @"EnrichedCheckbox0"
+        forcingNewLevel:YES
+             withTyping:YES
+         withDirtyRange:YES];
+    return;
+  }
+
   BOOL isPresent = [self detect:actualRange];
 
   if (isPresent) {

@@ -116,6 +116,21 @@ ListTextListsAfterAdding(NSArray<NSTextList *> *existing, NSString *value,
   }
 }
 
+- (void)toggle:(NSRange)range withConflictReplaced:(BOOL)conflictReplaced {
+  // during the toggle, a conflicting style (a different list)
+  // might have been removed. If so, we just add a new value to
+  // the textLists. Otherwise we follow the base flow
+  if (!conflictReplaced) {
+    [self toggle:range];
+    return;
+  }
+  [self add:[self actualUsedRange:range]
+            withValue:[self getValue]
+      forcingNewLevel:YES
+           withTyping:YES
+       withDirtyRange:YES];
+}
+
 - (void)remove:(NSRange)range withDirtyRange:(BOOL)withDirtyRange {
   NSRange actualRange = [self actualUsedRange:range];
 
