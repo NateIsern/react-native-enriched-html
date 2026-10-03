@@ -3,28 +3,28 @@
 #import "utils/RangeUtils.h"
 #import "utils/TextListsUtils.h"
 
-// adds `value` to the existing textLists array. If `forcingNewLevel` is set
-// to `true`, we append the marker, thus increasing the nesting. If set to
-// `false`, we update the format marker if relevant - e.g. from
-// `EnrichedCheckbox0` to `EnrichedCheckbox1`. If not applicable, this operation
-// is effectively idepotent
-static NSArray<NSTextList *> *
-ListTextListsAfterAdding(NSArray<NSTextList *> *existing, NSString *value,
-                         NSString *markerPrefix, BOOL forcingNewLevel) {
+@implementation ListStyleBase
+
+- (NSArray<NSTextList *> *)textListsByAddingValue:(NSString *)value
+                                          toArray:
+                                              (NSArray<NSTextList *> *)existing
+                                  forcingNewLevel:(BOOL)forcingNewLevel {
   NSString *deepestFormat =
       [TextListsUtils deepestListMarkerFormatInArray:existing];
+
   if (!forcingNewLevel && [deepestFormat isEqualToString:value]) {
     return existing;
   }
+
+  NSString *markerPrefix = [self getMarkerPrefix];
   if (!forcingNewLevel && markerPrefix != nil && deepestFormat != nil &&
       [deepestFormat hasPrefix:markerPrefix]) {
     return [TextListsUtils textListsByReplacingDeepestChainEntry:value
                                                          toArray:existing];
   }
+
   return [TextListsUtils textListsByAppendingToChain:value toArray:existing];
 }
-
-@implementation ListStyleBase
 
 - (BOOL)styleCondition:(id)value range:(NSRange)range {
   NSParagraphStyle *pStyle = (NSParagraphStyle *)value;
@@ -32,7 +32,7 @@ ListTextListsAfterAdding(NSArray<NSTextList *> *existing, NSString *value,
     return NO;
   }
 
-  // we check the deepest textLists marker - the nested list leaf
+  // check the deepest textLists marker - the nested list leaf
   NSString *ownFormat =
       [TextListsUtils deepestListMarkerFormatInArray:pStyle.textLists];
   if (ownFormat == nil) {
@@ -69,7 +69,7 @@ ListTextListsAfterAdding(NSArray<NSTextList *> *existing, NSString *value,
          withTyping:(BOOL)withTyping
      withDirtyRange:(BOOL)withDirtyRange {
   NSRange actualRange = [self actualUsedRange:range];
-  NSString *markerPrefix = [self getMarkerPrefix];
+
   [self.host.textView.textStorage
       enumerateAttribute:NSParagraphStyleAttributeName
                  inRange:actualRange
@@ -82,8 +82,9 @@ ListTextListsAfterAdding(NSArray<NSTextList *> *existing, NSString *value,
                   return;
 
                 NSArray<NSTextList *> *updatedTextLists =
-                    ListTextListsAfterAdding(currentStyle.textLists, value,
-                                             markerPrefix, forcingNewLevel);
+                    [self textListsByAddingValue:value
+                                         toArray:currentStyle.textLists
+                                 forcingNewLevel:forcingNewLevel];
                 if (updatedTextLists == currentStyle.textLists) {
                   return;
                 }
@@ -97,17 +98,7 @@ ListTextListsAfterAdding(NSArray<NSTextList *> *existing, NSString *value,
               }];
 
   if (withTyping) {
-    NSMutableDictionary *newTypingAttrs =
-        [self.host.textView.typingAttributes mutableCopy];
-    NSParagraphStyle *currentStyle =
-        newTypingAttrs[NSParagraphStyleAttributeName];
-    if (currentStyle != nil) {
-      NSMutableParagraphStyle *pStyle = [currentStyle mutableCopy];
-      pStyle.textLists = ListTextListsAfterAdding(
-          currentStyle.textLists, value, markerPrefix, forcingNewLevel);
-      newTypingAttrs[NSParagraphStyleAttributeName] = pStyle;
-      self.host.textView.typingAttributes = newTypingAttrs;
-    }
+    [self addTypingWithValue:value forcingNewLevel:forcingNewLevel];
   }
 
   // Notify attributes manager of styling to be re-done if needed.
@@ -160,6 +151,11 @@ ListTextListsAfterAdding(NSArray<NSTextList *> *existing, NSString *value,
 }
 
 - (void)addTypingWithValue:(NSString *)value {
+  [self addTypingWithValue:value forcingNewLevel:NO];
+}
+
+- (void)addTypingWithValue:(NSString *)value
+           forcingNewLevel:(BOOL)forcingNewLevel {
   NSMutableDictionary *newTypingAttrs =
       [self.host.textView.typingAttributes mutableCopy];
 
@@ -168,8 +164,10 @@ ListTextListsAfterAdding(NSArray<NSTextList *> *existing, NSString *value,
   if (currentStyle == nil)
     return;
 
-  NSArray<NSTextList *> *updatedTextLists = ListTextListsAfterAdding(
-      currentStyle.textLists, value, [self getMarkerPrefix], NO);
+  NSArray<NSTextList *> *updatedTextLists =
+      [self textListsByAddingValue:value
+                           toArray:currentStyle.textLists
+                   forcingNewLevel:forcingNewLevel];
   if (updatedTextLists == currentStyle.textLists) {
     return;
   }
@@ -247,9 +245,32 @@ ListTextListsAfterAdding(NSArray<NSTextList *> *existing, NSString *value,
     if (increasingNesting) {
       NSString *ownFormat =
           [TextListsUtils deepestListMarkerFormatInArray:textLists];
-      if (ownFormat == nil) {
+      if (ownFormat == nil || paragraphRange.location == 0) {
         continue;
       }
+
+      // we look at the line before, to inherit the parent list's textLists
+      NSRange prevRange = [self.host.textView.textStorage.string
+          paragraphRangeForRange:NSMakeRange(paragraphRange.location - 1, 0)];
+      NSArray<NSTextList *> *prevChain = [TextListsUtils
+          listChainInArray:[self textListsAtParagraphRange:prevRange]];
+      NSUInteger currentDepth = [TextListsUtils listDepthInArray:textLists];
+      if (prevChain.count < currentDepth) {
+        continue;
+      }
+
+      for (NSUInteger i = 0; i < currentDepth; i++) {
+        [self remove:paragraphRange withDirtyRange:NO];
+      }
+
+      for (NSUInteger i = 0; i < currentDepth; i++) {
+        [self add:paragraphRange
+                  withValue:prevChain[i].markerFormat
+            forcingNewLevel:YES
+                 withTyping:YES
+             withDirtyRange:NO];
+      }
+
       [self add:paragraphRange
                 withValue:ownFormat
           forcingNewLevel:YES

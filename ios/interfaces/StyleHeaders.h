@@ -76,6 +76,8 @@
 - (CGFloat)cumulativeHeadIndentForChain:(NSArray<NSTextList *> *)chain;
 - (void)modifyListNestingInRange:(NSRange)range
                       increasing:(BOOL)increasingNesting;
+- (void)addTypingWithValue:(NSString *)value
+           forcingNewLevel:(BOOL)forcingNewLevel;
 - (void)add:(NSRange)range
           withValue:(NSString *)value
     forcingNewLevel:(BOOL)forcingNewLevel
