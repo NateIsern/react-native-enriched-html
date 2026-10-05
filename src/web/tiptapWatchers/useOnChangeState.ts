@@ -80,9 +80,21 @@ function buildState(
       editor.isActive('codeBlock'),
       editor.isActive('link')
     ),
-    orderedList: paragraphFormat(editor.isActive('orderedList')),
-    unorderedList: paragraphFormat(editor.isActive('unorderedList')),
-    checkboxList: paragraphFormat(editor.isActive('checkboxList')),
+    orderedList: {
+      ...paragraphFormat(editor.isActive('orderedList')),
+      // TEMP: to match types
+      depth: 0,
+    },
+    unorderedList: {
+      ...paragraphFormat(editor.isActive('unorderedList')),
+      // TEMP: to match types
+      depth: 0,
+    },
+    checkboxList: {
+      ...paragraphFormat(editor.isActive('checkboxList')),
+      // TEMP: to match types
+      depth: 0,
+    },
     link: inlineFormat(
       'link',
       editor.isActive('code') ||

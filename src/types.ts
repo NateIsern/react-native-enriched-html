@@ -362,14 +362,12 @@ export interface OnChangeStateEvent {
     isActive: boolean;
     isConflicting: boolean;
     isBlocking: boolean;
-    /** Nesting depth of the list item at the current selection (`0` = top level). */
     depth: number;
   };
   unorderedList: {
     isActive: boolean;
     isConflicting: boolean;
     isBlocking: boolean;
-    /** Nesting depth of the list item at the current selection (`0` = top level). */
     depth: number;
   };
   link: {
@@ -391,7 +389,6 @@ export interface OnChangeStateEvent {
     isActive: boolean;
     isConflicting: boolean;
     isBlocking: boolean;
-    /** Nesting depth of the list item at the current selection (`0` = top level). */
     depth: number;
   };
   alignment: string;
@@ -536,7 +533,7 @@ export interface EnrichedTextInputInstance {
    *
    * @platform ios
    */
-  indent: () => void;
+  indentList: () => void;
 
   /**
    * Decreases the nesting depth of the list item(s) at the current selection
@@ -545,7 +542,7 @@ export interface EnrichedTextInputInstance {
    *
    * @platform ios
    */
-  outdent: () => void;
+  outdentList: () => void;
 
   /**
    * Inserts or updates a hyperlink over the character range `[start, end)`.

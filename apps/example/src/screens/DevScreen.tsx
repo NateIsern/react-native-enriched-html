@@ -82,6 +82,14 @@ export function DevScreen({ onSwitch }: DevScreenProps) {
             onSelectImage={editor.openImageModal}
             layout="horizontal"
           />
+          <Button
+            title="indent"
+            onPress={() => editor.ref.current?.indentList()}
+          />
+          <Button
+            title="outdent"
+            onPress={() => editor.ref.current?.outdentList()}
+          />
         </View>
         <HtmlSection currentHtml={editor.currentHtml} />
         <View style={styles.buttonStack}>

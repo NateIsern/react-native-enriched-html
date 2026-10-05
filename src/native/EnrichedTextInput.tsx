@@ -240,10 +240,10 @@ export const EnrichedTextInput = ({
     toggleCheckboxList: (checked: boolean) => {
       Commands.toggleCheckboxList(nullthrows(nativeRef.current), checked);
     },
-    indent: () => {
+    indentList: () => {
       Commands.indentList(nullthrows(nativeRef.current));
     },
-    outdent: () => {
+    outdentList: () => {
       Commands.outdentList(nullthrows(nativeRef.current));
     },
     setLink: (start: number, end: number, text: string, url: string) => {
