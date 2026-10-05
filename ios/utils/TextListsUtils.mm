@@ -101,6 +101,19 @@
   return chain;
 }
 
++ (NSArray<NSTextList *> *_Nonnull)
+    textListsByReplacingChainWith:(NSArray<NSTextList *> *_Nonnull)chain
+                          inArray:(NSArray<NSTextList *> *_Nullable)existing {
+  NSMutableArray<NSTextList *> *updated = [NSMutableArray array];
+  for (NSTextList *list in existing) {
+    if ([list.markerFormat hasPrefix:@"EnrichedAlignment"]) {
+      [updated addObject:list];
+    }
+  }
+  [updated addObjectsFromArray:chain];
+  return updated;
+}
+
 + (NSInteger)listDepthInArray:(NSArray<NSTextList *> *_Nullable)textLists {
   return [self listChainInArray:textLists].count;
 }

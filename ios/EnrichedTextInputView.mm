@@ -13,6 +13,7 @@
 #import "utils/AttachmentLayoutUtils.h"
 #import "utils/DotReplacementUtils.h"
 #import "utils/KeyboardUtils.h"
+#import "utils/ListIntegrityUtils.h"
 #import "utils/ParagraphAttributesUtils.h"
 #import "utils/ShortcutsUtils.h"
 #import "utils/StyleUtils.h"
@@ -1856,6 +1857,8 @@ Class<RCTComponentViewProtocol> EnrichedTextInputViewCls(void) {
       }
     }
   }
+  // nested lists validation around the dirty ranges; fixes add their own dirty ranges
+  [ListIntegrityUtils validateListsInDirtyRanges:self];
   // all the visible (not meta) attributes handling in the ranges that could
   // have changed
   [attributesManager handleDirtyRangesStyling];

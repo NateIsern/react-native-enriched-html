@@ -45,6 +45,11 @@
 + (NSArray<NSTextList *> *_Nonnull)listChainInArray:
     (NSArray<NSTextList *> *_Nullable)textLists;
 
+// Replaces the whole list chain with the given one.
++ (NSArray<NSTextList *> *_Nonnull)
+    textListsByReplacingChainWith:(NSArray<NSTextList *> *_Nonnull)chain
+                          inArray:(NSArray<NSTextList *> *_Nullable)existing;
+
 // Returns the chain length (nesting depth) of markers representing list styles.
 + (NSInteger)listDepthInArray:(NSArray<NSTextList *> *_Nullable)textLists;
 
