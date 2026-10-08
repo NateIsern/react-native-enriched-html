@@ -208,6 +208,81 @@
   return statesInRange;
 }
 
+// Moves lists nested inside list items (<li>a<ul>...</ul></li>) right after
+// them (<li>a</li><ul>...</ul>). This makes the structure more flat and more
+// accessible for the parser logic, as the whole parser was not designed to
+// process text-content mixed with list tags inside a single <li>.
++ (NSString *)liftNestedListsOutOfListItems:(NSString *)html {
+  NSMutableString *output = [NSMutableString stringWithCapacity:html.length];
+  // per open list: whether its current <li> is still open
+  NSMutableArray<NSNumber *> *itemOpenStack = [NSMutableArray array];
+  NSCharacterSet *tagNameSet = [NSCharacterSet alphanumericCharacterSet];
+  NSCharacterSet *whitespaceAndNewlineSet =
+      [NSCharacterSet whitespaceAndNewlineCharacterSet];
+
+  NSUInteger i = 0;
+  while (i < html.length) {
+    NSRange tagEnd = NSMakeRange(NSNotFound, 0);
+    if ([html characterAtIndex:i] == '<') {
+      tagEnd = [html rangeOfString:@">"
+                           options:0
+                             range:NSMakeRange(i, html.length - i)];
+    }
+    if (tagEnd.location == NSNotFound) {
+      NSRange nextTag =
+          [html rangeOfString:@"<"
+                      options:0
+                        range:NSMakeRange(i + 1, html.length - i - 1)];
+      NSUInteger runEnd =
+          nextTag.location == NSNotFound ? html.length : nextTag.location;
+      [output
+          appendString:[html substringWithRange:NSMakeRange(i, runEnd - i)]];
+      i = runEnd;
+      continue;
+    }
+
+    NSString *tag =
+        [html substringWithRange:NSMakeRange(i, tagEnd.location - i + 1)];
+    i = tagEnd.location + 1;
+
+    BOOL closing = tag.length > 1 && [tag characterAtIndex:1] == '/';
+    NSUInteger nameStart = closing ? 2 : 1;
+    NSUInteger nameEnd = nameStart;
+    while (nameEnd < tag.length &&
+           [tagNameSet characterIsMember:[tag characterAtIndex:nameEnd]]) {
+      nameEnd++;
+    }
+    NSString *name =
+        [[tag substringWithRange:NSMakeRange(nameStart, nameEnd - nameStart)]
+            lowercaseString];
+    BOOL isList = [name isEqualToString:@"ul"] || [name isEqualToString:@"ol"];
+
+    if (isList && !closing) {
+      // a list nested inside an item; close the item before it
+      if (itemOpenStack.lastObject.boolValue) {
+        [output appendString:@"</li>"];
+        itemOpenStack[itemOpenStack.count - 1] = @NO;
+      }
+      [itemOpenStack addObject:@NO];
+    } else if (isList && closing) {
+      if (itemOpenStack.count > 0) {
+        [itemOpenStack removeLastObject];
+      }
+    } else if ([name isEqualToString:@"li"] && itemOpenStack.count > 0) {
+      if (closing && !itemOpenStack.lastObject.boolValue) {
+        // the item has already been closed before its nested list,
+        // skip appending the </li> tag
+        continue;
+      }
+      itemOpenStack[itemOpenStack.count - 1] = @(!closing);
+    }
+
+    [output appendString:tag];
+  }
+
+  return output;
+}
+
 + (NSString *_Nullable)initiallyProcessHtml:(NSString *_Nonnull)html
                           useHtmlNormalizer:(BOOL)useHtmlNormalizer {
   NSString *htmlWithoutSpaces = [self stripExtraWhiteSpacesAndNewlines:html];
