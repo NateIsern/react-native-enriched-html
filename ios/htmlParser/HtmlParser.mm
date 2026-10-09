@@ -285,7 +285,9 @@
 
 + (NSString *_Nullable)initiallyProcessHtml:(NSString *_Nonnull)html
                           useHtmlNormalizer:(BOOL)useHtmlNormalizer {
-  NSString *htmlWithoutSpaces = [self stripExtraWhiteSpacesAndNewlines:html];
+  NSString *htmlWithoutSpaces = [self
+      stripExtraWhiteSpacesAndNewlines:[self
+                                           liftNestedListsOutOfListItems:html]];
   NSString *fixedHtml = nullptr;
 
   if (htmlWithoutSpaces.length >= 13) {
@@ -1059,13 +1061,15 @@
                   host.stylesDict[@([CheckboxListStyle getType])];
               BOOL checked =
                   [cbLStyle getCheckboxStateAt:currentRange.location];
+              // the item is closed by syncListStackTo, as nested lists may
+              // still follow
               if (checked) {
-                [result appendString:@"\n<li checked></li>"];
+                [result appendString:@"\n<li checked>"];
               } else {
-                [result appendString:@"\n<li></li>"];
+                [result appendString:@"\n<li>"];
               }
             } else {
-              [result appendString:@"\n<li></li>"];
+              [result appendString:@"\n<li>"];
             }
           }
         } else {
@@ -1120,9 +1124,11 @@
                                             sortDescriptorWithKey:@"intValue"
                                                         ascending:NO] ]];
 
-        // append closing tags
+        // append closing tags; list items are closed by syncListStackTo, as
+        // nested lists may still follow
         for (NSNumber *style in sortedEndedStyles) {
-          if ([style isEqualToNumber:@([ImageStyle getType])]) {
+          if ([style isEqualToNumber:@([ImageStyle getType])] ||
+              [self isListStyleType:style]) {
             continue;
           }
           NSString *tagContent = [self tagContentForStyle:style
@@ -1343,9 +1349,10 @@
                                         sortDescriptorWithKey:@"intValue"
                                                     ascending:NO] ]];
 
-    // append closing tags
+    // append closing tags; list items are closed by syncListStackTo
     for (NSNumber *style in sortedEndedStyles) {
-      if ([style isEqualToNumber:@([ImageStyle getType])]) {
+      if ([style isEqualToNumber:@([ImageStyle getType])] ||
+          [self isListStyleType:style]) {
         continue;
       }
       NSString *tagContent =
@@ -1632,9 +1639,19 @@
   return result;
 }
 
++ (BOOL)isListStyleType:(NSNumber *)type {
+  return [type isEqualToNumber:@([UnorderedListStyle getType])] ||
+         [type isEqualToNumber:@([OrderedListStyle getType])] ||
+         [type isEqualToNumber:@([CheckboxListStyle getType])];
+}
+
 // syncing the current nested list data stack to the new one. If the
 // new stack removes a list, the relevant closing tag is appended. If the
-// new stack adds a new list, the relevant opening tag is appended instead
+// new stack adds a new list, the relevant opening tag is appended instead.
+// Every list level on the stack has its <li> left open, so that a nested list
+// can be placed inside the item it belongs to (<li>a<ul><li>b</li></ul></li>).
+// The items are closed only once a paragraph at the same or a shallower depth
+// (or a non-list one) follows.
 + (void)syncListStackTo:(NSArray<NSNumber *> *)targetChain
                  result:(NSMutableString *)result
                   stack:(NSMutableArray<NSNumber *> *)openListStack
@@ -1646,6 +1663,10 @@
       [openListStack[commonPrefix] isEqualToNumber:targetChain[commonPrefix]]) {
     commonPrefix++;
   }
+
+  // the innermost open item directly follows its text content, so we can't
+  // append the '\n' for now
+  NSString *closeItemTag = @"</li>";
 
   while (openListStack.count > commonPrefix) {
     NSNumber *type = openListStack.lastObject;
@@ -1659,8 +1680,15 @@
       closeTag = @"\n</ul>";
     }
 
+    [result appendString:closeItemTag];
     [result appendString:closeTag];
     [openListStack removeLastObject];
+    closeItemTag = @"\n</li>";
+  }
+
+  // next item is a sibling at this depth; close the previous one
+  if (commonPrefix > 0 && commonPrefix == targetChain.count) {
+    [result appendString:closeItemTag];
   }
 
   for (NSUInteger k = commonPrefix; k < targetChain.count; k++) {
@@ -1668,19 +1696,32 @@
     NSString *cssStyleString = [self prepareCssStyleString:location
                                               isOpeningTag:YES
                                                       host:host];
+    // the innermost open item directly follows its text content, so we can't
+    // append the '\n' for now, unless we are not in any nested context (k=0)
+    NSString *newline = k > 0 ? @"" : @"\n";
     NSString *openTag = @"";
 
     if ([type isEqualToNumber:@([UnorderedListStyle getType])]) {
-      openTag = [NSString stringWithFormat:@"\n<ul%@>", cssStyleString];
+      openTag =
+          [NSString stringWithFormat:@"%@<ul%@>", newline, cssStyleString];
     } else if ([type isEqualToNumber:@([OrderedListStyle getType])]) {
-      openTag = [NSString stringWithFormat:@"\n<ol%@>", cssStyleString];
+      openTag =
+          [NSString stringWithFormat:@"%@<ol%@>", newline, cssStyleString];
     } else if ([type isEqualToNumber:@([CheckboxListStyle getType])]) {
-      openTag = [NSString
-          stringWithFormat:@"\n<ul data-type=\"checkbox\"%@>", cssStyleString];
+      openTag = [NSString stringWithFormat:@"%@<ul data-type=\"checkbox\"%@>",
+                                           newline, cssStyleString];
     }
 
     [result appendString:openTag];
     [openListStack addObject:type];
+
+    // Moving more than one level deeper means we have no text content in those
+    // list elements and a proper opening <li> tag will not get appended (this
+    // shouldn't happen as we keep the nested list structure valid in the input
+    // logic), so append it here, to keep the HTML structure intact
+    if (k < targetChain.count - 1) {
+      [result appendString:@"\n<li>"];
+    }
   }
 }
 

@@ -1857,7 +1857,8 @@ Class<RCTComponentViewProtocol> EnrichedTextInputViewCls(void) {
       }
     }
   }
-  // nested lists validation around the dirty ranges; fixes add their own dirty ranges
+  // nested lists validation around the dirty ranges; fixes add their own dirty
+  // ranges
   [ListIntegrityUtils validateListsInDirtyRanges:self];
   // all the visible (not meta) attributes handling in the ranges that could
   // have changed
