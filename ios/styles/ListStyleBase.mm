@@ -277,9 +277,48 @@
                withTyping:YES
            withDirtyRange:YES];
     } else if ([TextListsUtils listDepthInArray:textLists] > 1) {
-      [self remove:paragraphRange withDirtyRange:YES];
+      [self removeParentListInRange:paragraphRange];
     }
   }
+}
+
+- (void)removeParentListInRange:(NSRange)range {
+  NSRange actualRange = [self actualUsedRange:range];
+
+  [self.host.textView.textStorage
+      enumerateAttribute:NSParagraphStyleAttributeName
+                 inRange:actualRange
+                 options:0
+              usingBlock:^(id _Nullable existingValue, NSRange subRange,
+                           BOOL *_Nonnull stop) {
+                NSMutableParagraphStyle *pStyle =
+                    [(NSParagraphStyle *)existingValue mutableCopy];
+                if (pStyle == nullptr)
+                  return;
+                pStyle.textLists = [TextListsUtils
+                    textListsByRemovingParentChainEntry:pStyle.textLists];
+                [self.host.textView.textStorage
+                    addAttribute:NSParagraphStyleAttributeName
+                           value:pStyle
+                           range:subRange];
+              }];
+
+  // keep the typing attributes in sync
+  NSUInteger cursor = self.host.textView.selectedRange.location;
+  if (cursor >= actualRange.location && cursor <= NSMaxRange(actualRange)) {
+    NSMutableDictionary *newTypingAttrs =
+        [self.host.textView.typingAttributes mutableCopy];
+    NSMutableParagraphStyle *typingStyle =
+        [newTypingAttrs[NSParagraphStyleAttributeName] mutableCopy];
+    if (typingStyle != nil) {
+      typingStyle.textLists = [TextListsUtils
+          textListsByRemovingParentChainEntry:typingStyle.textLists];
+      newTypingAttrs[NSParagraphStyleAttributeName] = typingStyle;
+      self.host.textView.typingAttributes = newTypingAttrs;
+    }
+  }
+
+  [self.host.attributesManager addDirtyRange:actualRange];
 }
 
 @end

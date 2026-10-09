@@ -67,6 +67,10 @@
 + (NSArray<NSTextList *> *_Nonnull)textListsByRemovingDeepestChainEntry:
     (NSArray<NSTextList *> *_Nullable)existing;
 
+// Removes the closest parent (second to last element) in the list chain.
++ (NSArray<NSTextList *> *_Nonnull)textListsByRemovingParentChainEntry:
+    (NSArray<NSTextList *> *_Nullable)existing;
+
 // Replaces the deepest existing chain entry.
 + (NSArray<NSTextList *> *_Nonnull)
     textListsByReplacingDeepestChainEntry:(NSString *_Nonnull)value

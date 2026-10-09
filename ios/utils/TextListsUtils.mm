@@ -148,6 +148,17 @@
   return updated;
 }
 
++ (NSArray<NSTextList *> *_Nonnull)textListsByRemovingParentChainEntry:
+    (NSArray<NSTextList *> *_Nullable)existing {
+  NSMutableArray<NSTextList *> *chain =
+      [[self listChainInArray:existing] mutableCopy];
+  if (chain.count < 2) {
+    return existing ?: @[];
+  }
+  [chain removeObjectAtIndex:chain.count - 2];
+  return [self textListsByReplacingChainWith:chain inArray:existing];
+}
+
 + (NSArray<NSTextList *> *_Nonnull)
     textListsByReplacingDeepestChainEntry:(NSString *_Nonnull)value
                                   toArray:(NSArray<NSTextList *> *_Nullable)
