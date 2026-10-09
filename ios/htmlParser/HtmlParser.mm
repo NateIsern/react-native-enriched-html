@@ -1664,9 +1664,8 @@
     commonPrefix++;
   }
 
-  // the innermost open item directly follows its text content, so we can't
-  // append the '\n' for now
   NSString *closeItemTag = @"</li>";
+  BOOL closedAnyList = openListStack.count > commonPrefix;
 
   while (openListStack.count > commonPrefix) {
     NSNumber *type = openListStack.lastObject;
@@ -1698,7 +1697,10 @@
                                                       host:host];
     // the innermost open item directly follows its text content, so we can't
     // append the '\n' for now, unless we are not in any nested context (k=0)
-    NSString *newline = k > 0 ? @"" : @"\n";
+    // or a list has been just closed and we still have another one to open
+    // (more than one list inside a <li> tag)
+    BOOL followsItemContent = k > 0 && (k > commonPrefix || !closedAnyList);
+    NSString *newline = followsItemContent ? @"" : @"\n";
     NSString *openTag = @"";
 
     if ([type isEqualToNumber:@([UnorderedListStyle getType])]) {
