@@ -2156,23 +2156,6 @@ Class<RCTComponentViewProtocol> EnrichedTextInputViewCls(void) {
 
   // manage selection changes
   [self manageSelectionBasedChanges];
-
-  // DEBUG: log the textLists (list nesting chain + any other markers) at the
-  // current selection.
-  if (textView.textStorage.length > 0) {
-    NSUInteger debugIndex =
-        MIN(textView.selectedRange.location, textView.textStorage.length - 1);
-    NSParagraphStyle *debugPStyle =
-        [textView.textStorage attribute:NSParagraphStyleAttributeName
-                                atIndex:debugIndex
-                         effectiveRange:NULL];
-    NSMutableArray<NSString *> *debugMarkers = [NSMutableArray array];
-    for (NSTextList *debugList in debugPStyle.textLists) {
-      [debugMarkers addObject:debugList.markerFormat];
-    }
-    NSLog(@"[EnrichedTextInput] textLists at selection %@: %@",
-          NSStringFromRange(textView.selectedRange), debugMarkers);
-  }
 }
 
 // this function isn't called always when some text changes (for example setting

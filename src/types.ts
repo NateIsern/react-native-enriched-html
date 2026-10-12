@@ -529,7 +529,7 @@ export interface EnrichedTextInputInstance {
 
   /**
    * Increases the nesting depth of the list item(s) at the current selection
-   * by one. No-op when the selection isn't inside a list.
+   * by one.
    *
    * @platform ios
    */
@@ -537,8 +537,7 @@ export interface EnrichedTextInputInstance {
 
   /**
    * Decreases the nesting depth of the list item(s) at the current selection
-   * by one, down to a minimum of the top level (depth `0`). No-op when the
-   * selection isn't inside a list.
+   * by one, down to a minimum of the top level (depth `0`).
    *
    * @platform ios
    */
