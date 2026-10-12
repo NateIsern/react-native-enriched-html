@@ -76,13 +76,12 @@
 - (CGFloat)cumulativeHeadIndentForChain:(NSArray<NSTextList *> *)chain;
 - (void)modifyListNestingInRange:(NSRange)range
                       increasing:(BOOL)increasingNesting;
-- (void)addTypingWithValue:(NSString *)value
-           forcingNewLevel:(BOOL)forcingNewLevel;
+- (void)addTypingWithValue:(NSString *)value withNesting:(BOOL)withNesting;
 - (void)add:(NSRange)range
-          withValue:(NSString *)value
-    forcingNewLevel:(BOOL)forcingNewLevel
-         withTyping:(BOOL)withTyping
-     withDirtyRange:(BOOL)withDirtyRange;
+         withValue:(NSString *)value
+       withNesting:(BOOL)withNesting
+        withTyping:(BOOL)withTyping
+    withDirtyRange:(BOOL)withDirtyRange;
 @end
 
 @interface UnorderedListStyle : ListStyleBase

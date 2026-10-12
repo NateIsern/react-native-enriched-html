@@ -8,16 +8,16 @@
 - (NSArray<NSTextList *> *)textListsByAddingValue:(NSString *)value
                                           toArray:
                                               (NSArray<NSTextList *> *)existing
-                                  forcingNewLevel:(BOOL)forcingNewLevel {
+                                      withNesting:(BOOL)withNesting {
   NSString *deepestFormat =
       [TextListsUtils deepestListMarkerFormatInArray:existing];
 
-  if (!forcingNewLevel && [deepestFormat isEqualToString:value]) {
+  if (!withNesting && [deepestFormat isEqualToString:value]) {
     return existing;
   }
 
   NSString *markerPrefix = [self getMarkerPrefix];
-  if (!forcingNewLevel && markerPrefix != nil && deepestFormat != nil &&
+  if (!withNesting && markerPrefix != nil && deepestFormat != nil &&
       [deepestFormat hasPrefix:markerPrefix]) {
     return [TextListsUtils textListsByReplacingDeepestChainEntry:value
                                                          toArray:existing];
@@ -57,17 +57,17 @@
         withTyping:(BOOL)withTyping
     withDirtyRange:(BOOL)withDirtyRange {
   [self add:range
-            withValue:value
-      forcingNewLevel:NO
-           withTyping:withTyping
-       withDirtyRange:withDirtyRange];
+           withValue:value
+         withNesting:NO
+          withTyping:withTyping
+      withDirtyRange:withDirtyRange];
 }
 
 - (void)add:(NSRange)range
-          withValue:(NSString *)value
-    forcingNewLevel:(BOOL)forcingNewLevel
-         withTyping:(BOOL)withTyping
-     withDirtyRange:(BOOL)withDirtyRange {
+         withValue:(NSString *)value
+       withNesting:(BOOL)withNesting
+        withTyping:(BOOL)withTyping
+    withDirtyRange:(BOOL)withDirtyRange {
   NSRange actualRange = [self actualUsedRange:range];
 
   [self.host.textView.textStorage
@@ -84,7 +84,7 @@
                 NSArray<NSTextList *> *updatedTextLists =
                     [self textListsByAddingValue:value
                                          toArray:currentStyle.textLists
-                                 forcingNewLevel:forcingNewLevel];
+                                     withNesting:withNesting];
                 if (updatedTextLists == currentStyle.textLists) {
                   return;
                 }
@@ -98,7 +98,7 @@
               }];
 
   if (withTyping) {
-    [self addTypingWithValue:value forcingNewLevel:forcingNewLevel];
+    [self addTypingWithValue:value withNesting:withNesting];
   }
 
   // Notify attributes manager of styling to be re-done if needed.
@@ -116,10 +116,10 @@
     return;
   }
   [self add:[self actualUsedRange:range]
-            withValue:[self getValue]
-      forcingNewLevel:YES
-           withTyping:YES
-       withDirtyRange:YES];
+           withValue:[self getValue]
+         withNesting:YES
+          withTyping:YES
+      withDirtyRange:YES];
 }
 
 - (void)remove:(NSRange)range withDirtyRange:(BOOL)withDirtyRange {
@@ -151,11 +151,10 @@
 }
 
 - (void)addTypingWithValue:(NSString *)value {
-  [self addTypingWithValue:value forcingNewLevel:NO];
+  [self addTypingWithValue:value withNesting:NO];
 }
 
-- (void)addTypingWithValue:(NSString *)value
-           forcingNewLevel:(BOOL)forcingNewLevel {
+- (void)addTypingWithValue:(NSString *)value withNesting:(BOOL)withNesting {
   NSMutableDictionary *newTypingAttrs =
       [self.host.textView.typingAttributes mutableCopy];
 
@@ -167,7 +166,7 @@
   NSArray<NSTextList *> *updatedTextLists =
       [self textListsByAddingValue:value
                            toArray:currentStyle.textLists
-                   forcingNewLevel:forcingNewLevel];
+                       withNesting:withNesting];
   if (updatedTextLists == currentStyle.textLists) {
     return;
   }
@@ -265,17 +264,17 @@
 
       for (NSUInteger i = 0; i < currentDepth; i++) {
         [self add:paragraphRange
-                  withValue:prevChain[i].markerFormat
-            forcingNewLevel:YES
-                 withTyping:YES
-             withDirtyRange:NO];
+                 withValue:prevChain[i].markerFormat
+               withNesting:YES
+                withTyping:YES
+            withDirtyRange:NO];
       }
 
       [self add:paragraphRange
-                withValue:ownFormat
-          forcingNewLevel:YES
-               withTyping:YES
-           withDirtyRange:YES];
+               withValue:ownFormat
+             withNesting:YES
+              withTyping:YES
+          withDirtyRange:YES];
     } else if ([TextListsUtils listDepthInArray:textLists] > 1) {
       [self removeParentListInRange:paragraphRange];
     }

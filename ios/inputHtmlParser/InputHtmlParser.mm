@@ -184,10 +184,10 @@
         // First apply the checkbox list style to the entire range with
         // unchecked value
         [cbLStyle add:styleRange
-                  withValue:[cbLStyle getValue]
-            forcingNewLevel:YES
-                 withTyping:shouldAddTypingAttr
-             withDirtyRange:YES];
+                 withValue:[cbLStyle getValue]
+               withNesting:YES
+                withTyping:shouldAddTypingAttr
+            withDirtyRange:YES];
 
         if (checkboxStates && checkboxStates.count > 0) {
           // Then toggle checked checkboxes
@@ -209,7 +209,7 @@
 
         [(ListStyleBase *)baseStyle add:styleRange
                               withValue:[baseStyle getValue]
-                        forcingNewLevel:YES
+                            withNesting:YES
                              withTyping:NO
                          withDirtyRange:NO];
       } else {

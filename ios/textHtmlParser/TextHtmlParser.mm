@@ -125,10 +125,10 @@
       CheckboxListStyle *cbStyle = (CheckboxListStyle *)style;
 
       [cbStyle add:styleRange
-                withValue:[cbStyle getValue]
-          forcingNewLevel:YES
-               withTyping:NO
-           withDirtyRange:NO];
+               withValue:[cbStyle getValue]
+             withNesting:YES
+              withTyping:NO
+          withDirtyRange:NO];
 
       if (checkboxStates && checkboxStates.count > 0) {
         for (NSNumber *key in checkboxStates) {
@@ -144,7 +144,7 @@
     } else if ([style isList]) {
       [(ListStyleBase *)style add:styleRange
                         withValue:[style getValue]
-                  forcingNewLevel:YES
+                      withNesting:YES
                        withTyping:NO
                    withDirtyRange:NO];
     } else {

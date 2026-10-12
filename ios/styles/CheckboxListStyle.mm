@@ -84,10 +84,10 @@
   // the textLists. Otherwise we follow the base flow
   if (conflictReplaced) {
     [self add:actualRange
-              withValue:checked ? @"EnrichedCheckbox1" : @"EnrichedCheckbox0"
-        forcingNewLevel:YES
-             withTyping:YES
-         withDirtyRange:YES];
+             withValue:checked ? @"EnrichedCheckbox1" : @"EnrichedCheckbox0"
+           withNesting:YES
+            withTyping:YES
+        withDirtyRange:YES];
     return;
   }
 
