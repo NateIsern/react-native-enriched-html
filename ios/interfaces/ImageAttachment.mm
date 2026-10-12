@@ -1,4 +1,5 @@
 #import "ImageAttachment.h"
+#import "AttachmentLayoutUtils.h"
 #import "ImageExtension.h"
 
 // NSTextStorage frequently recreates NSTextAttachment objects during attribute
@@ -49,12 +50,9 @@ static NSCache<NSString *, UIImage *> *ImageAttachmentCache(void) {
                             characterIndex:(NSUInteger)charIndex {
   CGRect baseBounds = self.bounds;
 
-  CGFloat maxWidth = textContainer.size.width;
-  if (baseBounds.size.width > maxWidth && maxWidth > 0) {
-    CGFloat scale = maxWidth / baseBounds.size.width;
-    baseBounds.size.width = maxWidth;
-    baseBounds.size.height = baseBounds.size.height * scale;
-  }
+  baseBounds.size =
+      [AttachmentLayoutUtils clampedSize:baseBounds.size
+                              toMaxWidth:textContainer.size.width];
 
   if (!textContainer.layoutManager.textStorage ||
       charIndex >= textContainer.layoutManager.textStorage.length) {
