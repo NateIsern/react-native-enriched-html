@@ -365,6 +365,8 @@ export interface NativeProps extends ViewProps {
   cursorColor?: ColorValue;
   selectionColor?: ColorValue;
   autoCapitalize?: string;
+  autoCorrect?: boolean;
+  spellCheck?: boolean;
   htmlStyle?: HtmlStyleInternal;
   scrollEnabled?: boolean;
   linkRegex?: LinkNativeRegex;
