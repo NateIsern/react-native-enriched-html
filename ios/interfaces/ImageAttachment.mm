@@ -1,6 +1,6 @@
 #import "ImageAttachment.h"
-#import "AttachmentLayoutUtils.h"
-#import "ImageExtension.h"
+#import "extensions/ImageExtension.h"
+#import "utils/AttachmentLayoutUtils.h"
 
 // NSTextStorage frequently recreates NSTextAttachment objects during attribute
 // invalidation (e.g. on every keystroke). Without this cache each recreation
