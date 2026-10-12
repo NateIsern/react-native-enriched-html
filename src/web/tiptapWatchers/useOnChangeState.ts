@@ -82,17 +82,17 @@ function buildState(
     ),
     orderedList: {
       ...paragraphFormat(editor.isActive('orderedList')),
-      // TEMP: to match types
+      // TODO: nested lists to be implemented on web, placeholder for now
       depth: 0,
     },
     unorderedList: {
       ...paragraphFormat(editor.isActive('unorderedList')),
-      // TEMP: to match types
+      // TODO: nested lists to be implemented on web, placeholder for now
       depth: 0,
     },
     checkboxList: {
       ...paragraphFormat(editor.isActive('checkboxList')),
-      // TEMP: to match types
+      // TODO: nested lists to be implemented on web, placeholder for now
       depth: 0,
     },
     link: inlineFormat(

@@ -401,9 +401,9 @@ export const EnrichedTextInput = ({
         runFocused(editor, (c) => c.toggleUnorderedList()),
       toggleCheckboxList: (checked: boolean) =>
         runFocused(editor, (c) => c.toggleCheckboxList(checked)),
-      // TEMP: to match types
+      // TODO: nested lists to be implemented on web, placeholder for now
       indentList: () => {},
-      // TEMP: to match types
+      // TODO: nested lists to be implemented on web, placeholder for now
       outdentList: () => {},
       setLink: (start: number, end: number, text: string, url: string) =>
         runSafelyInEditor(editor, (e) => setLink(e, start, end, text, url)),
