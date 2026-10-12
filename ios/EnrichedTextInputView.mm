@@ -1243,7 +1243,8 @@ Class<RCTComponentViewProtocol> EnrichedTextInputViewCls(void) {
 // returns the list nesting depth at the current selection,
 // where 0 means no present nesting
 - (NSInteger)listDepthAtSelectionForType:(StyleType)type {
-  if (![self isStyleActive:type] || ![self.stylesDict[@(type)] isList]) {
+  if (![self.stylesDict[@(type)] isList] ||
+      ![self.stylesDict[@(type)] detect:textView.selectedRange]) {
     return 0;
   }
 
