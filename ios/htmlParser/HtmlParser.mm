@@ -246,12 +246,19 @@
                                                    withString:@"</body>"];
   // Then, if there actually are body tags, use the content between them.
   NSRange openingBodyRange = [htmlWithoutSpaces rangeOfString:@"<body>"];
-  NSRange closingBodyRange = [htmlWithoutSpaces rangeOfString:@"</body>"];
-  if (openingBodyRange.length != 0 && closingBodyRange.length != 0) {
-    NSInteger newStart = openingBodyRange.location + 6;
-    NSInteger newEnd = closingBodyRange.location - 1;
-    fixedHtml = [htmlWithoutSpaces
-        substringWithRange:NSMakeRange(newStart, newEnd - newStart + 1)];
+  if (openingBodyRange.length != 0) {
+    NSUInteger newStart = NSMaxRange(openingBodyRange);
+    // only look for the closing tag after the opening one
+    NSRange closingBodyRange = [htmlWithoutSpaces
+        rangeOfString:@"</body>"
+              options:0
+                range:NSMakeRange(newStart,
+                                  htmlWithoutSpaces.length - newStart)];
+    if (closingBodyRange.length != 0) {
+      fixedHtml = [htmlWithoutSpaces
+          substringWithRange:NSMakeRange(newStart,
+                                         closingBodyRange.location - newStart)];
+    }
   }
 
   // second processing - try fixing htmls with wrong newlines' setup
