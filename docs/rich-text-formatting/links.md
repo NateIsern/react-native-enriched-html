@@ -111,11 +111,12 @@ while editing an autolinked token breaks it.
 
 ## Handling links with events
 
-There are two events that allow you to handle user interaction with links, one in each component.
+There are a few events that allow you to handle user interaction with links.
 
 In `EnrichedTextInput`:
 
 * [**`onLinkDetected`**](/api-reference/enriched-text-input#onlinkdetected) fires when the cursor enters or leaves a created link.
+* [**`onLinkPress`**](/api-reference/enriched-text-input#onlinkpress) fires when the user clicks a link. Available only on Web.
 
 In `EnrichedText`:
 

@@ -15,7 +15,7 @@
 
 
 <script>!function(){try{var e=location.pathname;if([].some(function(t){return e===t||0===e.indexOf(t+"/")}))return;var t=localStorage.getItem("swm.topbarbanner.v1.enriched-topbar-1.ea15c4216158c4097b65fe6504a4b3b7");if(!t)return;var r=JSON.parse(t);if(!r||"number"!=typeof r.height||r.height<5)return;if(Date.now()-r.timestamp>=2592e6)return;var n=document.documentElement;n.style.setProperty("--banner-height-enriched-topbar-1-ea15c4216158c4097b65fe6504a4b3b7",r.height+"px"),"string"==typeof r.bgColor&&n.style.setProperty("--banner-bg-enriched-topbar-1-ea15c4216158c4097b65fe6504a4b3b7",r.bgColor)}catch(e){}}()</script><link rel="stylesheet" href="/react-native-enriched-html/assets/css/styles.da6a7c05.css">
-<script src="/react-native-enriched-html/assets/js/runtime~main.6f8dd14b.js" defer="defer"></script>
+<script src="/react-native-enriched-html/assets/js/runtime~main.bc2f91db.js" defer="defer"></script>
 <script src="/react-native-enriched-html/assets/js/main.a3d24442.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -81,10 +81,11 @@ Notice the difference afterward: editing the manual link&#x27;s text keeps it a 
 while editing an autolinked token breaks it.</p>
 <div class="container_DiME"><div class="toolbar__bNo"><div class="tabs_Oxug"><button type="button" class="tab_Wee4 tabActive_KsaS">Preview</button><button type="button" class="tab_Wee4">Code</button></div><button type="button" class="reset_dRvo">Reset</button></div><div class="preview_uwIr"><div class="loading_ecq1">Loading…</div></div></div>
 <h2 class="anchor _anchorWithStickyNavbar_1jjlx_6" id="handling-links-with-events">Handling links with events<a href="#handling-links-with-events" class="hash-link" aria-label="Direct link to Handling links with events" title="Direct link to Handling links with events">​</a></h2>
-<p>There are two events that allow you to handle user interaction with links, one in each component.</p>
+<p>There are a few events that allow you to handle user interaction with links.</p>
 <p>In <code>EnrichedTextInput</code>:</p>
 <ul>
 <li><a href="/react-native-enriched-html/api-reference/enriched-text-input#onlinkdetected"><strong><code>onLinkDetected</code></strong></a> fires when the cursor enters or leaves a created link.</li>
+<li><a href="/react-native-enriched-html/api-reference/enriched-text-input#onlinkpress"><strong><code>onLinkPress</code></strong></a> fires when the user clicks a link. Available only on Web.</li>
 </ul>
 <p>In <code>EnrichedText</code>:</p>
 <ul>
