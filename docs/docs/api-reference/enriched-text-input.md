@@ -347,6 +347,12 @@ interface OnChangeStateEvent {
   mention: StyleState;
   checkboxList: StyleState;
   alignment: string;
+  customStyle: {
+    foregroundColor: string;
+    backgroundColor: string;
+    fontSize: number;
+    fontFamily: string;
+  };
 }
 ```
 
@@ -356,6 +362,10 @@ interface OnChangeStateEvent {
 - `isConflicting` - toggling the style removes a conflicting active style
 - `alignment` - current text alignment of the paragraph at the cursor:
   `'left'`, `'center'`, `'right'`, `'justify'`, or `'auto'`
+- `customStyle` - the [custom style](/rich-text-formatting/custom-style) values
+  within the current selection. A field that isn't set, or
+  differs across the selection, is empty - `''` for strings and `0` for
+  `fontSize`. Colors are reported as hex strings (e.g. `#FF0000`)
 
 :::note
 
@@ -970,6 +980,34 @@ list, the alignment is applied to all contiguous list items. See
 On Android, `'justify'` is not supported. Calling
 `setTextAlignment('justify')` does not apply justified text - the paragraph ends
 up with natural alignment, the same as `'auto'`.
+
+:::
+
+### `.setStyle()`
+
+```ts
+setStyle: (customStyle: {
+  foregroundColor?: ColorValue | null;
+  backgroundColor?: ColorValue | null;
+  fontSize?: number | null;
+  fontFamily?: string | null;
+}) => void;
+```
+
+Sets the [custom style](/rich-text-formatting/custom-style) at the current
+selection. Passing `null` for a field removes it.
+
+- `foregroundColor` - text color. Takes a
+  [color](https://reactnative.dev/docs/colors) value
+- `backgroundColor` - text highlight color. Takes a
+  [color](https://reactnative.dev/docs/colors) value
+- `fontSize` - font size of the text
+- `fontFamily` - font family of the text
+
+:::note
+
+Platform colors created with `PlatformColor` or `DynamicColorIOS` are not
+supported - passing one behaves the same as passing `null`.
 
 :::
 
