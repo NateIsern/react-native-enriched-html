@@ -332,14 +332,14 @@ export function Toolbar({
             <span className="toolbar-color-label">A</span>
             <span
               className="toolbar-color-indicator"
-              style={{
-                backgroundColor:
-                  activeFgColor.length > 0 ? activeFgColor : 'transparent',
-                borderColor:
-                  activeFgColor.length > 0
-                    ? activeFgColor
-                    : 'rgba(255,255,255,0.4)',
-              }}
+              style={
+                activeFgColor.length > 0
+                  ? {
+                      backgroundColor: activeFgColor,
+                      borderColor: activeFgColor,
+                    }
+                  : undefined
+              }
             />
           </button>
           <button
@@ -358,14 +358,14 @@ export function Toolbar({
             <span className="toolbar-color-label">BG</span>
             <span
               className="toolbar-color-indicator"
-              style={{
-                backgroundColor:
-                  activeBgColor.length > 0 ? activeBgColor : 'transparent',
-                borderColor:
-                  activeBgColor.length > 0
-                    ? activeBgColor
-                    : 'rgba(255,255,255,0.4)',
-              }}
+              style={
+                activeBgColor.length > 0
+                  ? {
+                      backgroundColor: activeBgColor,
+                      borderColor: activeBgColor,
+                    }
+                  : undefined
+              }
             />
           </button>
           <button

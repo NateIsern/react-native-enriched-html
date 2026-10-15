@@ -1,16 +1,17 @@
 #import "HtmlParser.h"
-#import "AlignmentEntry.h"
-#import "AlignmentUtils.h"
-#import "ColorExtension.h"
-#import "CustomStyleData.h"
-#import "EnrichedConfig.h"
+#import "config/EnrichedConfig.h"
+#import "extensions/ColorExtension.h"
+#import "extensions/StringExtension.h"
+#import "interfaces/AlignmentEntry.h"
+#import "interfaces/CustomStyleData.h"
+#import "interfaces/ImageData.h"
+#import "interfaces/LinkData.h"
+#import "interfaces/MentionParams.h"
+#import "interfaces/StyleHeaders.h"
+#import "interfaces/StylePair.h"
+#import "utils/AlignmentUtils.h"
+
 #include "GumboParser.hpp"
-#import "ImageData.h"
-#import "LinkData.h"
-#import "MentionParams.h"
-#import "StringExtension.h"
-#import "StyleHeaders.h"
-#import "StylePair.h"
 
 @implementation HtmlParser
 
@@ -966,7 +967,16 @@
             inCheckboxList = NO;
           }
         } else {
-          [result appendString:@"\n<br>"];
+          NSString *cssStyleString =
+              [self prepareCssStyleString:currentRange.location
+                             isOpeningTag:YES
+                                     host:host];
+          if (cssStyleString.length > 0) {
+            [result appendString:[NSString stringWithFormat:@"\n<p%@></p>",
+                                                            cssStyleString]];
+          } else {
+            [result appendString:@"\n<br>"];
+          }
         }
       } else {
         // newline finishes a paragraph and all style tags need to be closed
@@ -1658,7 +1668,7 @@
 }
 
 + (void)checkForAlignments:(NSArray *)tagData
-                 plainText:(NSString *)plainText
+                 plainText:(NSMutableString *)plainText
            foundAlignments:(NSMutableArray<AlignmentEntry *> *)foundAlignments
        precedingImageCount:(NSInteger)precedingImageCount {
   if (tagData == nil) {
@@ -1675,6 +1685,12 @@
     // Calculate range relative to plainText
     NSInteger actualStart = startLoc + precedingImageCount;
     NSInteger length = plainText.length - startLoc;
+
+    // Empty aligned paragraphs have no characters to attach alignment to.
+    if (length == 0) {
+      [plainText appendString:@"\u200B"];
+      length = 1;
+    }
 
     if (length > 0) {
       AlignmentEntry *entry = [[AlignmentEntry alloc] init];

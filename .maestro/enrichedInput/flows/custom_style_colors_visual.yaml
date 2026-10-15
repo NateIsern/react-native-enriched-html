@@ -96,6 +96,8 @@ appId: swmansion.enriched.example
 - inputText: 'H5 red'
 - pressKey: Enter
 - tapOn:
+    id: 'blur-button'
+- tapOn:
     id: 'toolbar-text-color'
 - tapOn:
     id: 'color-swatch-clear'
@@ -106,7 +108,11 @@ appId: swmansion.enriched.example
     id: 'toolbar-bg-color'
 - tapOn:
     id: 'color-swatch-FFFF00'
+- tapOn:
+    id: 'focus-button'
 - inputText: 'Quote yellow back'
+- tapOn:
+    id: 'blur-button'
 - tapOn:
     id: 'toolbar-bg-color'
 - tapOn:

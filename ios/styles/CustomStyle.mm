@@ -1,9 +1,9 @@
-#import "ColorExtension.h"
-#import "CustomStyleData.h"
 #import "EnrichedTextInputView.h"
-#import "FontExtension.h"
-#import "RangeUtils.h"
-#import "StyleHeaders.h"
+#import "extensions/ColorExtension.h"
+#import "extensions/FontExtension.h"
+#import "interfaces/CustomStyleData.h"
+#import "interfaces/StyleHeaders.h"
+#import "utils/RangeUtils.h"
 #import <React/RCTFont.h>
 
 static NSString *const CustomStyleAttributeName = @"EnrichedCustomStyle";
