@@ -590,11 +590,13 @@ export interface EnrichedTextInputInstance {
   ) => void;
 
   /**
-   * Sets the custom text and background colors for the current text selection.
+   * Sets the custom style (text and background colors, font size, font family) for
+   * the current text selection.
    *
-   * @param customStyle - An object specifying the colors to apply.
-   * Provide `foregroundColor` to change the text color, and `backgroundColor` to change
-   * the text highlight color. Passing `null` for a property will remove that specific style.
+   * @param customStyle - An object specifying the styles to apply.
+   * Provide `foregroundColor` to change the text color, `backgroundColor` to change
+   * the text highlight color, `fontSize` to change the font size, and `fontFamily`
+   * to change the font family. Passing `null` for a property will remove that specific style.
    */
   setStyle: (customStyle: {
     foregroundColor?: ColorValue | null;
