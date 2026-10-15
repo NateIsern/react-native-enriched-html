@@ -117,7 +117,10 @@ function toHexColor(color: string | null | undefined): string {
 
 function getCurrentCustomStyleAttributes(editor: Editor): Record<string, any> {
   const { selection, doc, schema } = editor.state;
-  if (selection.empty) return editor.getAttributes('customStyle');
+  if (selection.empty) {
+    const marks = editor.state.storedMarks ?? selection.$from.marks();
+    return schema.marks.customStyle?.isInSet(marks)?.attrs ?? {};
+  }
 
   const foregroundColors = new Set<string | null>();
   const backgroundColors = new Set<string | null>();

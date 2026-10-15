@@ -267,6 +267,27 @@ test.describe('custom style colors - toolbar interaction', () => {
     await textColorButton(page).click();
   });
 
+  test('custom style is not active right after clearing it', async ({
+    page,
+  }) => {
+    const editor = editorLocator(page);
+    await editor.click();
+
+    await applyTextColor(page, '#FF0000');
+    await editor.pressSequentially('Red', { delay: 80 });
+    await clearTextColor(page);
+
+    // The cursor still sits right after the red text, but the color was
+    // cleared for the next typed characters, so no swatch should be active
+    await textColorButton(page).click();
+    await expect(colorSwatch(page, '#FF0000')).not.toHaveClass(
+      /toolbar-color-swatch--active/
+    );
+
+    // Close the picker
+    await textColorButton(page).click();
+  });
+
   test('toolbar bg-color button shows active swatch when color is set', async ({
     page,
   }) => {
