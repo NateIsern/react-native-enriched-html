@@ -32,6 +32,7 @@ import { Placeholder } from '@tiptap/extensions/placeholder';
 import { useOnChangeHtml } from './useOnChangeHtml';
 import { useOnChangeText } from './useOnChangeText';
 import { useOnChangeState } from './useOnChangeState';
+import { useBaseFontFamily } from './useBaseFontFamily';
 import { useOnLinkDetected } from './useOnLinkDetected';
 import type { LinkEmitterState } from './emitLinkDetected';
 import {
@@ -42,6 +43,7 @@ import { ENRICHED_TEXT_INPUT_DEFAULT_PROPS } from '../utils/EnrichedTextInputDef
 import { enrichedInputStyleToCSSProperties } from './styleConversion/enrichedInputStyleToCSSProperties';
 import { enrichedInputThemingToCSSProperties } from './styleConversion/enrichedThemingToCSSProperties';
 import { buildMentionRulesCSS } from './styleConversion/buildMentionRulesCSS';
+import { enrichedStyleToCSSVariables } from './styleConversion/enrichedStyleToCSSVariables';
 import {
   htmlStyleToCSSVariables,
   mergeWithDefaultHtmlStyle,
@@ -425,6 +427,12 @@ export const EnrichedTextInput = ({
             ...('backgroundColor' in customStyle && {
               backgroundColor: normalizeColorValue(customStyle.backgroundColor),
             }),
+            ...('fontSize' in customStyle && {
+              fontSize: customStyle.fontSize,
+            }),
+            ...('fontFamily' in customStyle && {
+              fontFamily: customStyle.fontFamily,
+            }),
           })
         );
       },
@@ -437,9 +445,18 @@ export const EnrichedTextInput = ({
     [scrollEnabled, style]
   );
 
+  const getEditorElement = useCallback(() => editor.view.dom, [editor]);
+  const baseFontFamily = useBaseFontFamily(
+    getEditorElement,
+    editorStyle.fontFamily
+  );
+
   const cssVars = useMemo(
-    () => htmlStyleToCSSVariables(resolvedHtmlStyle),
-    [resolvedHtmlStyle]
+    () => ({
+      ...htmlStyleToCSSVariables(resolvedHtmlStyle),
+      ...enrichedStyleToCSSVariables({ fontFamily: baseFontFamily }),
+    }),
+    [resolvedHtmlStyle, baseFontFamily]
   );
 
   const themingStyle = useMemo(
