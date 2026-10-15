@@ -9,6 +9,7 @@ import {
   isFormatBlocked,
 } from '../formats/formatRules';
 import type { HtmlStyle } from '../../types';
+import { normalizeColorToHex } from '../normalization/colorNormalizer';
 
 export const useOnChangeState = (
   editor: Editor | null,
@@ -102,12 +103,16 @@ function buildState(
     },
     alignment: getCurrentAlignment(editor) ?? 'auto',
     customStyle: {
-      foregroundColor: customStyle.foregroundColor ?? '',
-      backgroundColor: customStyle.backgroundColor ?? '',
+      foregroundColor: toHexColor(customStyle.foregroundColor),
+      backgroundColor: toHexColor(customStyle.backgroundColor),
       fontSize: customStyle.fontSize ?? 0,
       fontFamily: customStyle.fontFamily ?? '',
     },
   };
+}
+
+function toHexColor(color: string | null | undefined): string {
+  return normalizeColorToHex(color) ?? color ?? '';
 }
 
 function getCurrentCustomStyleAttributes(editor: Editor): Record<string, any> {
@@ -122,8 +127,8 @@ function getCurrentCustomStyleAttributes(editor: Editor): Record<string, any> {
   doc.nodesBetween(selection.from, selection.to, (node) => {
     if (!node.isText) return;
     const attrs = schema.marks.customStyle?.isInSet(node.marks)?.attrs;
-    foregroundColors.add(attrs?.foregroundColor ?? null);
-    backgroundColors.add(attrs?.backgroundColor ?? null);
+    foregroundColors.add(toHexColor(attrs?.foregroundColor) || null);
+    backgroundColors.add(toHexColor(attrs?.backgroundColor) || null);
     fontSizes.add(attrs?.fontSize ?? null);
     fontFamilies.add(attrs?.fontFamily ?? null);
   });
