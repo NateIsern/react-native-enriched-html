@@ -10,7 +10,7 @@ import { htmlStyle } from './htmlStyle';
 const TEXT_COLOR = '#ff8560';
 const HIGHLIGHT_COLOR = '#c1c6e5';
 const FONT_SIZE = 26;
-const FONT_FAMILY = 'DM Mono';
+const FONT_FAMILY = 'cursive';
 
 export default function App() {
   const ref = useRef<EnrichedTextInputInstance>(null);
