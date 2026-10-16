@@ -1522,7 +1522,20 @@
             }
           }
           if (cssProps.length > 0) {
-            return [NSString stringWithFormat:@"span style=\"%@\"", cssProps];
+            NSString *escapedStyle =
+                [cssProps stringByReplacingOccurrencesOfString:@"&"
+                                                    withString:@"&amp;"];
+            escapedStyle =
+                [escapedStyle stringByReplacingOccurrencesOfString:@"<"
+                                                        withString:@"&lt;"];
+            escapedStyle =
+                [escapedStyle stringByReplacingOccurrencesOfString:@">"
+                                                        withString:@"&gt;"];
+            escapedStyle =
+                [escapedStyle stringByReplacingOccurrencesOfString:@"\""
+                                                        withString:@"&quot;"];
+            return
+                [NSString stringWithFormat:@"span style=\"%@\"", escapedStyle];
           }
         }
       }
@@ -1564,7 +1577,8 @@
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     styleAttrRegex = [NSRegularExpression
-        regularExpressionWithPattern:@"style\\s*=\\s*[\"']([^\"']*)[\"']"
+        regularExpressionWithPattern:
+            @"style\\s*=\\s*[\"']((?<=\")[^\"]*(?=\")|(?<=')[^']*(?='))[\"']"
                              options:NSRegularExpressionCaseInsensitive
                                error:nil];
     // Captures everything after "color:" until a semicolon or end of string
@@ -1600,6 +1614,14 @@
     return nil;
 
   NSString *css = [params substringWithRange:[attrMatch rangeAtIndex:1]];
+  // decode entities escaped by the serializers
+  for (NSArray<NSString *> *entity in @[
+         @[ @"&quot;", @"\"" ], @[ @"&#39;", @"'" ], @[ @"&lt;", @"<" ],
+         @[ @"&gt;", @">" ], @[ @"&amp;", @"&" ]
+       ]) {
+    css = [css stringByReplacingOccurrencesOfString:entity[0]
+                                         withString:entity[1]];
+  }
   CustomStyleData *data = [[CustomStyleData alloc] init];
 
   NSTextCheckingResult *fgMatch =
