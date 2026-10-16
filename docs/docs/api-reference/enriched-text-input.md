@@ -997,19 +997,12 @@ setStyle: (customStyle: {
 Sets the [custom style](/rich-text-formatting/custom-style) at the current
 selection. Passing `null` for a field removes it.
 
-- `foregroundColor` - text color. Takes a
-  [color](https://reactnative.dev/docs/colors) value
-- `backgroundColor` - text highlight color. Takes a
-  [color](https://reactnative.dev/docs/colors) value
+- `foregroundColor` - text color; use a hex (e.g. `#FFE066`) or named (e.g.
+  `'red'`) color
+- `backgroundColor` - text highlight color; use a hex (e.g. `#FFE066`) or named
+  (e.g. `'red'`) color
 - `fontSize` - font size of the text
 - `fontFamily` - font family of the text
-
-:::note
-
-Platform colors created with `PlatformColor` or `DynamicColorIOS` are not
-supported - passing one behaves the same as passing `null`.
-
-:::
 
 ### `.startMention()`
 
