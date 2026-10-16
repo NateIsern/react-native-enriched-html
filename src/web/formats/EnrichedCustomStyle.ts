@@ -1,6 +1,7 @@
 import { Mark } from '@tiptap/core';
 import type { Attrs } from '@tiptap/pm/model';
 import { withBaseFontFamilyFallback } from '../styleConversion/enrichedStyleToCSSVariables';
+import { deleteCharacterBackward } from '../utils/deleteCharacterBackward';
 
 type CustomStyleAttrs = {
   foregroundColor?: string | null;
@@ -156,7 +157,8 @@ export const EnrichedCustomStyle = Mark.create({
         // Cursor sits right at the plain-styled boundary.
         // Handle deletion ourselves so Chrome's contenteditable
         // normalization never touches the styled <span>.
-        const tr = state.tr.delete($from.pos - 1, $from.pos);
+        const tr = deleteCharacterBackward(state);
+        if (!tr) return false;
         editor.view.dispatch(tr);
         return true;
       },
