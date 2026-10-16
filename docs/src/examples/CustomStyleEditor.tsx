@@ -38,7 +38,7 @@ export default function App() {
         }),
     },
     {
-      label: 'Size',
+      label: 'Font size',
       isActive: !!customStyle?.fontSize,
       onPress: () =>
         ref.current?.setStyle({
@@ -46,7 +46,7 @@ export default function App() {
         }),
     },
     {
-      label: 'Font',
+      label: 'Font family',
       isActive: !!customStyle?.fontFamily,
       onPress: () =>
         ref.current?.setStyle({
