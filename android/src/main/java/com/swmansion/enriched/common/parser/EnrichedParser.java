@@ -380,7 +380,9 @@ public class EnrichedParser {
                 cssProps.append("font-family: ").append(fontFamily).append(";");
               }
             }
-            out.append("<span style=\"").append(cssProps).append("\">");
+            out.append("<span style=\"")
+                .append(cssProps.toString().replace("&", "&amp;").replace("\"", "&quot;"))
+                .append("\">");
           } else {
             out.append("<span>");
           }
@@ -1032,7 +1034,7 @@ class HtmlToSpannedConverter<T> implements ContentHandler {
 
   private static String parseCssFontFamily(String raw) {
     if (raw == null) return null;
-    String value = raw.trim();
+    String value = raw.split(",", 2)[0].trim();
     if ((value.startsWith("'") && value.endsWith("'"))
         || (value.startsWith("\"") && value.endsWith("\""))) {
       value = value.substring(1, value.length() - 1);
