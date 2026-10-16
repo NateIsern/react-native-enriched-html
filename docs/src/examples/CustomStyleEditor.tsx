@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   button: {
-    width: 90,
+    width: 120,
     padding: 8,
     borderRadius: 24,
     borderWidth: 1,
