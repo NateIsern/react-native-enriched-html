@@ -281,6 +281,51 @@ static const char *find_css_value(const char *style, size_t style_len,
   return NULL;
 }
 
+/* First family of a font stack, unquoted: `"Open Sans", Arial` → Open Sans. */
+static const char *first_font_family(const char *val, size_t *val_len) {
+  if (!val)
+    return NULL;
+  const char *start = val;
+  const char *end = val + *val_len;
+  const char *comma = memchr(start, ',', *val_len);
+  if (comma)
+    end = comma;
+  while (start < end && isspace((unsigned char)*start))
+    start++;
+  while (end > start && isspace((unsigned char)*(end - 1)))
+    end--;
+  // strip the quotes if the value is quoted
+  if (end - start >= 2 && (*start == '\'' || *start == '"') &&
+      *(end - 1) == *start) {
+    start++;
+    end--;
+  }
+  *val_len = (size_t)(end - start);
+  if (memchr(start, '\'', *val_len))
+    return NULL;
+  return start;
+}
+
+static void append_style_prop(buffer_t *out, const char *prefix,
+                              const char *val, size_t val_len,
+                              const char *suffix, bool *first) {
+  if (!*first)
+    buffer_append_str(out, "; ");
+  *first = false;
+  buffer_append_str(out, prefix);
+  // only `&` and `"` are significant inside a double-quoted attribute
+  // and need to be escaped
+  for (size_t i = 0; i < val_len; i++) {
+    if (val[i] == '&')
+      buffer_append_str(out, "&amp;");
+    else if (val[i] == '"')
+      buffer_append_str(out, "&quot;");
+    else
+      buffer_append(out, &val[i], 1);
+  }
+  buffer_append_str(out, suffix);
+}
+
 static bool css_val_contains(const char *val, size_t val_len,
                              const char *needle) {
   size_t nlen = strlen(needle);
@@ -859,27 +904,35 @@ static void walk_node(GumboNode *node, buffer_t *out) {
     size_t bg_len = 0;
     const char *bg = find_css_value(sval, slen, "background-color", &bg_len);
 
-    int has_fg = (fg && fg_len > 0);
-    int has_bg = (bg && bg_len > 0);
+    size_t fs_len = 0;
+    const char *fs = find_css_value(sval, slen, "font-size", &fs_len);
 
-    // emit the wrapper span if colors exist
-    if (has_fg || has_bg) {
+    size_t ff_len = 0;
+    const char *ff = first_font_family(
+        find_css_value(sval, slen, "font-family", &ff_len), &ff_len);
+
+    bool has_fg = fg && fg_len > 0;
+    bool has_bg = bg && bg_len > 0;
+    bool has_fs = fs && fs_len > 0;
+    bool has_ff = ff && ff_len > 0;
+    bool has_custom_style = has_fg || has_bg || has_fs || has_ff;
+
+    // emit the wrapper span if custom styles exist
+    if (has_custom_style) {
+      bool first = true;
       buffer_append_str(out, "<span style=\"");
-      
-      if (has_fg) {
-        buffer_append_str(out, "color: ");
-        buffer_append(out, fg, fg_len);
+      if (has_fg)
+        append_style_prop(out, "color: ", fg, fg_len, "", &first);
+      if (has_bg)
+        append_style_prop(out, "background-color: ", bg, bg_len, "", &first);
+      if (has_fs)
+        append_style_prop(out, "font-size: ", fs, fs_len, "", &first);
+      if (has_ff) {
+        // quote family names with spaces
+        bool quote = memchr(ff, ' ', ff_len) != NULL;
+        append_style_prop(out, quote ? "font-family: '" : "font-family: ", ff,
+                          ff_len, quote ? "'" : "", &first);
       }
-      
-      if (has_fg && has_bg) {
-        buffer_append_str(out, "; ");
-      }
-      
-      if (has_bg) {
-        buffer_append_str(out, "background-color: ");
-        buffer_append(out, bg, bg_len);
-      }
-      
       buffer_append_str(out, "\">");
     }
 
@@ -889,7 +942,7 @@ static void walk_node(GumboNode *node, buffer_t *out) {
     emit_styles_close(out, s);
 
     // close the wrapper span
-    if (has_fg || has_bg) {
+    if (has_custom_style) {
       buffer_append_str(out, "</span>");
     }
 
