@@ -60,6 +60,9 @@ const TABLE_TAGS = new Set([
   'col',
 ]);
 
+// table tags that hold inline text rather than other table parts
+const TABLE_TEXT_TAGS = new Set(['td', 'th', 'caption']);
+
 function canonicalName(name: string): string {
   switch (name) {
     case 'strong':
@@ -413,6 +416,20 @@ function isWhitespaceOnly(value: string): boolean {
   return true;
 }
 
+/** Whitespace-only text next to blocks or between table parts is just layout.
+ *  E.g. `<p>123</p>\n<p>456</p>`. */
+function isLayoutWhitespace(node: Node): boolean {
+  const parent = node.parentNode;
+  if (!isWhitespaceOnly(node.textContent ?? '') || !isElement(parent)) {
+    return false;
+  }
+  const parentName = parent.tagName.toLowerCase();
+  return (
+    hasBlockOrBqChild(parent) ||
+    (TABLE_TAGS.has(parentName) && !TABLE_TEXT_TAGS.has(parentName))
+  );
+}
+
 /**
  * Flush buffered inline content as a <p>. Inter-block whitespace (newlines /
  * spaces between block tags in pretty-printed HTML) is discarded so it does
@@ -638,9 +655,7 @@ function walkNode(
 ): void {
   if (isText(node)) {
     const text = node.textContent ?? '';
-    // we don't wrap breaklines (whitespace-only text containing '\n')
-    const wrap =
-      !!inherited && !(isWhitespaceOnly(text) && text.includes('\n'));
+    const wrap = !!inherited && !isLayoutWhitespace(node);
     if (wrap) out.buf += emitCustomStyleOpen(inherited);
     out.buf += escapeText(text);
     if (wrap) out.buf += '</span>';

@@ -220,6 +220,20 @@ static bool is_purely_inline(GumboNode *node) {
   return true;
 }
 
+static bool is_table_tag(const char *name) {
+  return strcmp(name, "table") == 0 || strcmp(name, "thead") == 0 ||
+         strcmp(name, "tbody") == 0 || strcmp(name, "tfoot") == 0 ||
+         strcmp(name, "tr") == 0 || strcmp(name, "td") == 0 ||
+         strcmp(name, "th") == 0 || strcmp(name, "caption") == 0 ||
+         strcmp(name, "colgroup") == 0 || strcmp(name, "col") == 0;
+}
+
+/** Table tags that hold inline text rather than other table tags. */
+static bool is_table_text_tag(const char *name) {
+  return strcmp(name, "td") == 0 || strcmp(name, "th") == 0 ||
+         strcmp(name, "caption") == 0;
+}
+
 /** True if any direct child is block-producing or a blockquote. */
 static bool has_block_or_bq_child(GumboNode *node) {
   if (!is_element(node))
@@ -705,6 +719,18 @@ static bool is_whitespace_only(const char *data, size_t len) {
   return true;
 }
 
+/** Whitespace-only text next to blocks or between table parts is just layout.
+ *  E.g. `<p>123</p>\n<p>456</p>`. */
+static bool is_layout_whitespace(GumboNode *node) {
+  if (node->type != GUMBO_NODE_WHITESPACE)
+    return false;
+  char buf[64];
+  const char *parent_name = get_tag_name(node->parent, buf, sizeof(buf));
+  return parent_name && (has_block_or_bq_child(node->parent) ||
+                         (is_table_tag(parent_name) &&
+                          !is_table_text_tag(parent_name)));
+}
+
 /**
  * Flush buffered inline content as a <p>. Inter-block whitespace (newlines /
  * spaces between block tags in pretty-printed HTML) is discarded so it does
@@ -942,9 +968,7 @@ static void walk_node(GumboNode *node, buffer_t *out,
     const char *text_raw = node->v.text.text;
     if (text_raw) {
       size_t text_len = strlen(text_raw);
-      // we don't wrap braeaklines (GUMBO_NODE_WHITESPACE + '\n')
-      bool wrap = inherited && !(node->type == GUMBO_NODE_WHITESPACE &&
-                                 strchr(text_raw, '\n'));
+      bool wrap = inherited && !is_layout_whitespace(node);
       if (wrap)
         emit_custom_style_open(out, *inherited);
       for (size_t i = 0; i < text_len; i++) {
@@ -1093,11 +1117,7 @@ static void walk_node(GumboNode *node, buffer_t *out,
   }
 
   /* --- Table elements --- */
-  if (strcmp(name_buf, "table") == 0 || strcmp(name_buf, "thead") == 0 ||
-      strcmp(name_buf, "tbody") == 0 || strcmp(name_buf, "tfoot") == 0 ||
-      strcmp(name_buf, "tr") == 0 || strcmp(name_buf, "td") == 0 ||
-      strcmp(name_buf, "th") == 0 || strcmp(name_buf, "caption") == 0 ||
-      strcmp(name_buf, "colgroup") == 0 || strcmp(name_buf, "col") == 0) {
+  if (is_table_tag(name_buf)) {
     if (strcmp(name_buf, "td") == 0 || strcmp(name_buf, "th") == 0) {
       walk_children(node, out, inherited);
       /* Check if there's a next sibling element */

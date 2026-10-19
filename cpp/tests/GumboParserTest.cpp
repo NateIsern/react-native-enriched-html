@@ -781,6 +781,29 @@ TEST(GumboParserTest, NestedSpans) {
                 "<span style=\"background-color: TRANSPARENT\">A</span>"),
             "A");
 
+  // Whitespace between blocks is layout and doesn't become a paragraph
+  EXPECT_EQ(GumboParser::normalizeHtml(
+                "<span style=\"color: red\"><p>A</p> <p><span style=\"color: "
+                "blue\">B</span></p></span>"),
+            "<p><span style=\"color: red\">A</span></p><p><span "
+            "style=\"color: blue\">B</span></p>");
+
+  // Whitespace between table parts is layout
+  EXPECT_EQ(GumboParser::normalizeHtml(
+                "<span style=\"color: red\">A<table>\n<tr>\n<td><span "
+                "style=\"color: blue\">B</span></td>\n</tr>\n</table></span>"),
+            "<p><span style=\"color: red\">A</span></p>\n<p>\n<span "
+            "style=\"color: blue\">B</span>\n</p>");
+
+  // Whitespace inside a table cell is inline and keeps the style
+  EXPECT_EQ(GumboParser::normalizeHtml(
+                "<span style=\"color: red\">A<table><tr><td><span "
+                "style=\"color: blue\">B</span> <span style=\"color: "
+                "green\">C</span></td></tr></table></span>"),
+            "<p><span style=\"color: red\">A</span></p><p><span "
+            "style=\"color: blue\">B</span><span style=\"color: red\"> "
+            "</span><span style=\"color: green\">C</span></p>");
+
   // Unstyled spans outside styled ones don't wrap anything
   EXPECT_EQ(GumboParser::normalizeHtml(
                 "<span>A<span style=\"color: red\">B</span>C</span>"),
