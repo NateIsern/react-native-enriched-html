@@ -28,6 +28,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 /* ------------------------------------------------------------------ */
 /*  Dynamic string buffer                                              */
@@ -422,8 +423,13 @@ static css_styles_t parse_css_style(const char *style_value, size_t style_len) {
   }
 
   result.custom.fg = find_custom_css_value(style_value, style_len, "color");
-  result.custom.bg =
+  css_slice_t background_color =
       find_custom_css_value(style_value, style_len, "background-color");
+  // we don't want `transparent` to overwrite it's parent span's background-color
+  if (!(background_color.len == strlen("transparent") &&
+      strncasecmp(background_color.val, "transparent", background_color.len) == 0)) {
+    result.custom.bg = background_color;
+  }
   result.custom.font_size =
       find_custom_css_value(style_value, style_len, "font-size");
   css_slice_t family =

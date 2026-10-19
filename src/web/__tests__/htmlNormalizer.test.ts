@@ -660,6 +660,13 @@ describe('htmlNormalizer', () => {
         '<span style="color: red; background-color: yellow">A<span style="color: blue">B<span style="font-size: 20px">C</span></span></span>',
         '<span style="color: red; background-color: yellow">A</span><span style="color: blue; background-color: yellow">B</span><span style="color: blue; background-color: yellow; font-size: 20px">C</span>',
       ],
+      // Transparent background doesn't override the inherited one
+      [
+        '<span style="background-color: yellow">A<span style="color: blue; background-color: transparent">B</span></span>',
+        '<span style="background-color: yellow">A</span><span style="color: blue; background-color: yellow">B</span>',
+      ],
+      // Transparent background alone is treated as no style
+      ['<span style="background-color: TRANSPARENT">A</span>', 'A'],
       // Unstyled spans outside styled ones don't wrap anything
       [
         '<span>A<span style="color: red">B</span>C</span>',

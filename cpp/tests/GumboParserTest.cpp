@@ -768,6 +768,19 @@ TEST(GumboParserTest, NestedSpans) {
       "style=\"color: blue; background-color: yellow; font-size: "
       "20px\">C</span>");
 
+  // Transparent background doesn't override the inherited one
+  EXPECT_EQ(GumboParser::normalizeHtml(
+                "<span style=\"background-color: yellow\">A<span "
+                "style=\"color: blue; background-color: "
+                "transparent\">B</span></span>"),
+            "<span style=\"background-color: yellow\">A</span><span "
+            "style=\"color: blue; background-color: yellow\">B</span>");
+
+  // Transparent background alone is treated as no style
+  EXPECT_EQ(GumboParser::normalizeHtml(
+                "<span style=\"background-color: TRANSPARENT\">A</span>"),
+            "A");
+
   // Unstyled spans outside styled ones don't wrap anything
   EXPECT_EQ(GumboParser::normalizeHtml(
                 "<span>A<span style=\"color: red\">B</span>C</span>"),

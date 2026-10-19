@@ -215,7 +215,11 @@ function parseCustomStyle(el: Element): CustomStyle {
   const style = (el as HTMLElement).style;
   return {
     fg: style.color,
-    bg: style.backgroundColor,
+    // we don't want `transparent` to overwrite it's parent span's background-color
+    bg:
+      style.backgroundColor.toLowerCase() === 'transparent'
+        ? ''
+        : style.backgroundColor,
     fontSize: style.fontSize,
     fontFamily: escapeText(style.fontFamily),
   };
