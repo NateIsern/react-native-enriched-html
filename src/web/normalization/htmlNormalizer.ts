@@ -204,6 +204,36 @@ function parseCssStyle(style: string | null): CssStyles {
   return result;
 }
 
+type CustomStyle = {
+  fg: string;
+  bg: string;
+  fontSize: string;
+  fontFamily: string;
+};
+
+function parseCustomStyle(el: Element): CustomStyle {
+  const style = (el as HTMLElement).style;
+  return {
+    fg: style.color,
+    bg: style.backgroundColor,
+    fontSize: style.fontSize,
+    fontFamily: escapeText(style.fontFamily),
+  };
+}
+
+function customStyleIsEmpty(s: CustomStyle): boolean {
+  return !s.fg && !s.bg && !s.fontSize && !s.fontFamily;
+}
+
+function emitCustomStyleOpen(s: CustomStyle): string {
+  const styleParts: string[] = [];
+  if (s.fg) styleParts.push(`color: ${s.fg}`);
+  if (s.bg) styleParts.push(`background-color: ${s.bg}`);
+  if (s.fontSize) styleParts.push(`font-size: ${s.fontSize}`);
+  if (s.fontFamily) styleParts.push(`font-family: ${s.fontFamily}`);
+  return `<span style="${styleParts.join('; ')}">`;
+}
+
 function extraStyles(s: CssStyles, tag: string): CssStyles {
   return {
     bold: s.bold && tag !== 'b',
@@ -329,6 +359,24 @@ function isGoogleDocsWrapper(el: Element, tag: string): boolean {
   return !!id && id.startsWith('docs-internal-guid-') && id.length > 20;
 }
 
+// --- Nested custom style spans ---
+
+function isStyledSpan(node: Node): boolean {
+  return (
+    tagName(node) === 'span' &&
+    !customStyleIsEmpty(parseCustomStyle(node as Element))
+  );
+}
+
+function hasStyledSpanDescendant(node: Element): boolean {
+  for (const c of Array.from(node.childNodes)) {
+    if (isStyledSpan(c) || (isElement(c) && hasStyledSpanDescendant(c))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function escapeText(s: string): string {
   return s.replace(/[&<>"']/g, (match) => {
     switch (match) {
@@ -382,21 +430,22 @@ function flushInlineP(
 function flattenBqChildren(
   node: Element,
   ib: { buf: string },
-  out: { buf: string }
+  out: { buf: string },
+  inherited: CustomStyle | null
 ): void {
   for (const child of Array.from(node.childNodes)) {
-    flattenBqNode(child, ib, out);
+    flattenBqNode(child, ib, out, inherited);
   }
 }
 
 function flattenBqNode(
   node: Node,
   ib: { buf: string },
-  out: { buf: string }
+  out: { buf: string },
+  inherited: CustomStyle | null
 ): void {
   if (isText(node)) {
-    const t = node.textContent ?? '';
-    ib.buf += escapeText(t);
+    walkNode(node, ib, inherited);
     return;
   }
   if (!isElement(node)) return;
@@ -410,12 +459,12 @@ function flattenBqNode(
   }
   if (isBlockProducing(node) || isBlockquoteNode(node)) {
     flushInlineP(ib, out);
-    flattenBqChildren(node, ib, out);
+    flattenBqChildren(node, ib, out, inherited);
     // The flattened block becomes a <p>; carry over its text-align (if any).
     flushInlineP(ib, out, emitAlignment(node, 'p'));
     return;
   }
-  walkNode(node, ib);
+  walkNode(node, ib, inherited);
 }
 
 // --- List item content flattening ---
@@ -425,6 +474,7 @@ type LiCtx = {
   styles: CssStyles;
   nestedLists: Element[];
   hasEmitted: boolean;
+  inherited: CustomStyle | null;
 };
 
 function flushLiBuffer(
@@ -460,7 +510,7 @@ function flattenLiNode(
   ctx: LiCtx
 ): void {
   if (isText(node)) {
-    ib.buf += escapeText(node.textContent ?? '');
+    walkNode(node, ib, ctx.inherited);
     return;
   }
   if (!isElement(node)) return;
@@ -487,12 +537,16 @@ function flattenLiNode(
     flushLiBuffer(ib, out, ctx);
     return;
   }
-  walkNode(node, ib);
+  walkNode(node, ib, ctx.inherited);
 }
 
 // --- Main walker ---
 
-function walkChildren(node: Element, out: { buf: string }): void {
+function walkChildren(
+  node: Element,
+  out: { buf: string },
+  inherited: CustomStyle | null
+): void {
   const children = Array.from(node.childNodes);
   const parentIsList = isListNode(node);
 
@@ -510,7 +564,7 @@ function walkChildren(node: Element, out: { buf: string }): void {
 
     // Flatten list-inside-list
     if (parentIsList && isElement(child) && isListNode(child)) {
-      walkChildren(child, out);
+      walkChildren(child, out, inherited);
       i++;
       continue;
     }
@@ -522,7 +576,7 @@ function walkChildren(node: Element, out: { buf: string }): void {
       while (i < children.length) {
         const cur = children[i];
         if (!cur || !isElement(cur) || !isBlockquoteNode(cur)) break;
-        flattenBqChildren(cur, bqIb, out);
+        flattenBqChildren(cur, bqIb, out, inherited);
         i++;
       }
       flushInlineP(bqIb, out);
@@ -557,25 +611,35 @@ function walkChildren(node: Element, out: { buf: string }): void {
         // Transparent inline wrapper for block/bq children
         if (isElement(cur) && hasBlockOrBqChild(cur)) {
           flushInlineP(ib, out);
-          walkChildren(cur, out);
+          walkChildren(cur, out, inherited);
           i++;
           continue;
         }
-        walkNode(cur, ib);
+        walkNode(cur, ib, inherited);
         i++;
       }
       flushInlineP(ib, out);
       continue;
     }
 
-    walkNode(child, out);
+    walkNode(child, out, inherited);
     i++;
   }
 }
 
-function walkNode(node: Node, out: { buf: string }): void {
+function walkNode(
+  node: Node,
+  out: { buf: string },
+  inherited: CustomStyle | null
+): void {
   if (isText(node)) {
-    out.buf += escapeText(node.textContent ?? '');
+    const text = node.textContent ?? '';
+    // we don't wrap breaklines (whitespace-only text containing '\n')
+    const wrap =
+      !!inherited && !(isWhitespaceOnly(text) && text.includes('\n'));
+    if (wrap) out.buf += emitCustomStyleOpen(inherited);
+    out.buf += escapeText(text);
+    if (wrap) out.buf += '</span>';
     return;
   }
   if (!isElement(node)) return;
@@ -585,7 +649,7 @@ function walkNode(node: Node, out: { buf: string }): void {
   if (STRIPPED_TAGS.has(name)) return;
 
   if (isGoogleDocsWrapper(node, name)) {
-    walkChildren(node, out);
+    walkChildren(node, out, inherited);
     return;
   }
 
@@ -594,35 +658,36 @@ function walkNode(node: Node, out: { buf: string }): void {
 
   // <span>: CSS style → inline tags
   if (name === 'span') {
-    const htmlNode = node as HTMLElement;
     const s = parseCssStyle(node.getAttribute('style'));
 
-    const fg = htmlNode.style.color;
-    const bg = htmlNode.style.backgroundColor;
-    const fontSize = htmlNode.style.fontSize;
-    const fontFamily = escapeText(htmlNode.style.fontFamily);
+    // own properties override the inherited ones
+    const own = parseCustomStyle(node);
+    const style: CustomStyle = {
+      fg: own.fg || inherited?.fg || '',
+      bg: own.bg || inherited?.bg || '',
+      fontSize: own.fontSize || inherited?.fontSize || '',
+      fontFamily: own.fontFamily || inherited?.fontFamily || '',
+    };
 
-    // build the preserved span if colors exist
-    let spanOpen = '';
-    let spanClose = '';
-    const styleParts: string[] = [];
-
-    if (fg) styleParts.push(`color: ${fg}`);
-    if (bg) styleParts.push(`background-color: ${bg}`);
-    if (fontSize) styleParts.push(`font-size: ${fontSize}`);
-    if (fontFamily) styleParts.push(`font-family: ${fontFamily}`);
-
-    if (styleParts.length > 0) {
-      spanOpen = `<span style="${styleParts.join('; ')}">`;
-      spanClose = '</span>';
+    let childrenStyle = inherited;
+    let wrap = false;
+    if (!customStyleIsEmpty(own)) {
+      // if there are no nested spans deeper, we can emit a wrapper immediately,
+      // otherwise we hold off with that and we'll emit span tags deeper, after flattening
+      if (hasStyledSpanDescendant(node)) {
+        childrenStyle = style;
+      } else {
+        wrap = true;
+        childrenStyle = null;
+      }
     }
 
     // output everything in the correct nested order
-    out.buf += spanOpen;
+    if (wrap) out.buf += emitCustomStyleOpen(style);
     out.buf += emitStylesOpen(s);
-    walkChildren(node, out);
+    walkChildren(node, out, childrenStyle);
     out.buf += emitStylesClose(s);
-    out.buf += spanClose;
+    if (wrap) out.buf += '</span>';
     return;
   }
 
@@ -641,14 +706,14 @@ function walkNode(node: Node, out: { buf: string }): void {
           pb.buf = '';
           continue;
         }
-        walkNode(dc, pb);
+        walkNode(dc, pb, inherited);
       }
       if (pb.buf.length > 0) {
         out.buf += `<p>${emitStylesOpen(s)}${pb.buf}${emitStylesClose(s)}</p>`;
       }
     } else {
       out.buf += emitStylesOpen(s);
-      walkChildren(node, out);
+      walkChildren(node, out, inherited);
       out.buf += emitStylesClose(s);
     }
     return;
@@ -657,25 +722,25 @@ function walkNode(node: Node, out: { buf: string }): void {
   // Table elements
   if (TABLE_TAGS.has(name)) {
     if (name === 'td' || name === 'th') {
-      walkChildren(node, out);
+      walkChildren(node, out, inherited);
       // Append space if there is a next element sibling
       let sib: Node | null = node.nextSibling;
       while (sib && !isElement(sib)) sib = sib.nextSibling;
       if (sib) out.buf += ' ';
     } else if (name === 'tr') {
       const row = { buf: '' };
-      walkChildren(node, row);
+      walkChildren(node, row, inherited);
       if (row.buf.length > 0) {
         out.buf += `<p>${row.buf}</p>`;
       }
     } else {
-      walkChildren(node, out);
+      walkChildren(node, out, inherited);
     }
     return;
   }
 
   if (cls === 'pass' || cls === 'skip') {
-    walkChildren(node, out);
+    walkChildren(node, out, inherited);
     return;
   }
 
@@ -692,7 +757,13 @@ function walkNode(node: Node, out: { buf: string }): void {
   if (outName === 'li') {
     const nestedLists: Element[] = [];
     const liIb = { buf: '' };
-    const ctx: LiCtx = { el: node, styles: es, nestedLists, hasEmitted: false };
+    const ctx: LiCtx = {
+      el: node,
+      styles: es,
+      nestedLists,
+      hasEmitted: false,
+      inherited,
+    };
     flattenLiChildren(node, liIb, out, ctx);
     flushLiBuffer(liIb, out, ctx);
 
@@ -701,7 +772,7 @@ function walkNode(node: Node, out: { buf: string }): void {
       out.buf += `<li${emitAttributes(ctx.el, 'li')}></li>`;
     }
 
-    for (const nl of nestedLists) walkChildren(nl, out);
+    for (const nl of nestedLists) walkChildren(nl, out, inherited);
     return;
   }
 
@@ -710,7 +781,7 @@ function walkNode(node: Node, out: { buf: string }): void {
     const wrap = isPurelyInline(node);
     out.buf += '<codeblock>';
     if (wrap) out.buf += '<p>';
-    walkChildren(node, out);
+    walkChildren(node, out, inherited);
     if (wrap) out.buf += '</p>';
     out.buf += '</codeblock>';
     return;
@@ -719,7 +790,7 @@ function walkNode(node: Node, out: { buf: string }): void {
   // Generic block/inline
   out.buf += `<${outName}${emitAttributes(node, outName)}>`;
   out.buf += emitStylesOpen(es);
-  walkChildren(node, out);
+  walkChildren(node, out, inherited);
   out.buf += emitStylesClose(es);
   out.buf += `</${outName}>`;
 }
@@ -729,6 +800,6 @@ export function normalizeHtml(html: string): string {
   const doc = parser.parseFromString(`<body>${html}</body>`, 'text/html');
   const body = doc.body;
   const out = { buf: '' };
-  walkChildren(body, out);
+  walkChildren(body, out, null);
   return out.buf;
 }

@@ -626,4 +626,56 @@ describe('htmlNormalizer', () => {
       expect(normalizeHtml(input)).toBe(expected);
     });
   });
+
+  describe('NestedSpans', () => {
+    test.each([
+      // Child overrides the parent
+      [
+        '<span style="color: red">A<span style="color: blue">B</span>C</span>',
+        '<span style="color: red">A</span><span style="color: blue">B</span><span style="color: red">C</span>',
+      ],
+      // Child inherits properties it doesn't set
+      [
+        '<span style="color: red">A<span style="font-size: 20px">B</span></span>',
+        '<span style="color: red">A</span><span style="color: red; font-size: 20px">B</span>',
+      ],
+      // Unstyled spans are transparent
+      [
+        '<span style="color: red">A<span>B</span>C</span>',
+        '<span style="color: red">ABC</span>',
+      ],
+      // Styles are pushed down through other inline tags
+      [
+        '<span style="color: red"><b>A<span style="color: blue">B</span></b></span>',
+        '<b><span style="color: red">A</span><span style="color: blue">B</span></b>',
+      ],
+      // A wrapper inside a pushed-down span merges the inherited style, and its
+      // text isn't wrapped again
+      [
+        '<span style="color: red">A<b>B<span style="font-size: 20px">C</span></b><span>D</span></span>',
+        '<span style="color: red">A</span><b><span style="color: red">B</span><span style="color: red; font-size: 20px">C</span></b><span style="color: red">D</span>',
+      ],
+      // Styles are inherited across multiple levels
+      [
+        '<span style="color: red; background-color: yellow">A<span style="color: blue">B<span style="font-size: 20px">C</span></span></span>',
+        '<span style="color: red; background-color: yellow">A</span><span style="color: blue; background-color: yellow">B</span><span style="color: blue; background-color: yellow; font-size: 20px">C</span>',
+      ],
+      // Unstyled spans outside styled ones don't wrap anything
+      [
+        '<span>A<span style="color: red">B</span>C</span>',
+        'A<span style="color: red">B</span>C',
+      ],
+      // Context reaches list items and blockquotes
+      [
+        '<ul><li><span style="color: red">A<span style="color: blue">B</span></span></li></ul>',
+        '<ul><li><span style="color: red">A</span><span style="color: blue">B</span></li></ul>',
+      ],
+      [
+        '<blockquote><span style="color: red">A<span style="color: blue">B</span></span></blockquote>',
+        '<blockquote><p><span style="color: red">A</span><span style="color: blue">B</span></p></blockquote>',
+      ],
+    ])('%s → %s', (input, expected) => {
+      expect(normalizeHtml(input)).toBe(expected);
+    });
+  });
 });
