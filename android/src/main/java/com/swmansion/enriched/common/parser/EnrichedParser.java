@@ -374,7 +374,7 @@ public class EnrichedParser {
             }
             if (fontFamily != null && !fontFamily.isEmpty()) {
               if (cssProps.length() > 0) cssProps.append(" ");
-              if (fontFamily.indexOf(' ') >= 0) {
+              if (fontFamily.indexOf(' ') >= 0 || fontFamily.indexOf(',') >= 0) {
                 cssProps.append("font-family: '").append(fontFamily).append("';");
               } else {
                 cssProps.append("font-family: ").append(fontFamily).append(";");
@@ -1034,12 +1034,27 @@ class HtmlToSpannedConverter<T> implements ContentHandler {
 
   private static String parseCssFontFamily(String raw) {
     if (raw == null) return null;
-    String value = raw.split(",", 2)[0].trim();
+    String value = firstInFontFamilyString(raw).trim();
     if ((value.startsWith("'") && value.endsWith("'"))
         || (value.startsWith("\"") && value.endsWith("\""))) {
       value = value.substring(1, value.length() - 1);
     }
     return value.isEmpty() ? null : value;
+  }
+
+  private static String firstInFontFamilyString(String value) {
+    char quote = 0;
+    for (int i = 0; i < value.length(); i++) {
+      char c = value.charAt(i);
+      if (quote != 0) {
+        if (c == quote) quote = 0;
+      } else if (c == '\'' || c == '"') {
+        quote = c;
+      } else if (c == ',') {
+        return value.substring(0, i);
+      }
+    }
+    return value;
   }
 
   private static <T> void endSpan(Editable text, T style, EnrichedSpanFactory<T> spanFactory) {

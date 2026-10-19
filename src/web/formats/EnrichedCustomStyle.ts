@@ -10,14 +10,27 @@ type CustomStyleAttrs = {
   fontFamily?: string | null;
 };
 
-function normalizeFontFamily(value: string | null | undefined): string | null {
+function firstInFontFamilyString(value: string): string {
+  let quote = '';
+  for (let i = 0; i < value.length; i++) {
+    const c = value[i];
+    if (quote) {
+      if (c === quote) quote = '';
+    } else if (c === "'" || c === '"') {
+      quote = c;
+    } else if (c === ',') {
+      return value.slice(0, i);
+    }
+  }
+  return value;
+}
+
+export function normalizeFontFamily(
+  value: string | null | undefined
+): string | null {
   if (!value) return null;
 
-  let fontFamily = value.trim();
-  const commaIndex = fontFamily.indexOf(',');
-  if (commaIndex !== -1) {
-    fontFamily = fontFamily.slice(0, commaIndex).trim();
-  }
+  let fontFamily = firstInFontFamilyString(value.trim()).trim();
 
   if (
     (fontFamily.startsWith("'") && fontFamily.endsWith("'")) ||
@@ -56,8 +69,8 @@ function buildStyle(attrs: Attrs, withFontFamilyFallback = false): string {
   }
   if (attrs.fontFamily) {
     const fontFamily = attrs.fontFamily as string;
-    // if the font family contains a space, wrap it in quotes
-    const family = /\s/.test(fontFamily) ? `'${fontFamily}'` : fontFamily;
+    // if the font family contains a space or a comma, wrap it in quotes
+    const family = /[\s,]/.test(fontFamily) ? `'${fontFamily}'` : fontFamily;
     // add a fall-back to the input's inherited font, if needed
     parts.push(
       `font-family: ${withFontFamilyFallback ? withBaseFontFamilyFallback(family) : family}`

@@ -1514,8 +1514,9 @@
           if (data.fontFamily.length > 0) {
             if (cssProps.length > 0)
               [cssProps appendString:@" "];
-            if ([data.fontFamily rangeOfString:@" "].location != NSNotFound) {
-              // font family contains spaces, wrap in single quotes
+            if ([data.fontFamily rangeOfString:@" "].location != NSNotFound ||
+                [data.fontFamily rangeOfString:@","].location != NSNotFound) {
+              // font family contains spaces or commas, wrap in single quotes
               [cssProps appendFormat:@"font-family: '%@';", data.fontFamily];
             } else {
               [cssProps appendFormat:@"font-family: %@;", data.fontFamily];
@@ -1565,6 +1566,22 @@
   }
 
   return @"";
+}
+
++ (NSString *)firstInFontFamilyString:(NSString *)value {
+  unichar quote = 0;
+  for (NSUInteger i = 0; i < value.length; i++) {
+    unichar c = [value characterAtIndex:i];
+    if (quote != 0) {
+      if (c == quote)
+        quote = 0;
+    } else if (c == '\'' || c == '"') {
+      quote = c;
+    } else if (c == ',') {
+      return [value substringToIndex:i];
+    }
+  }
+  return value;
 }
 
 + (CustomStyleData *_Nullable)parseCustomStyleDataFromSpanParams:
@@ -1667,13 +1684,9 @@
 
     // If font family contains a comma, use the first part e.g. "Nunito,
     // sans-serif" -> "Nunito"
-    NSRange commaRange = [fontFamilyString rangeOfString:@","];
-    if (commaRange.location != NSNotFound) {
-      fontFamilyString =
-          [[fontFamilyString substringToIndex:commaRange.location]
-              stringByTrimmingCharactersInSet:
-                  [NSCharacterSet whitespaceAndNewlineCharacterSet]];
-    }
+    fontFamilyString = [[self firstInFontFamilyString:fontFamilyString]
+        stringByTrimmingCharactersInSet:[NSCharacterSet
+                                            whitespaceAndNewlineCharacterSet]];
     if (([fontFamilyString hasPrefix:@"'"] &&
          [fontFamilyString hasSuffix:@"'"]) ||
         ([fontFamilyString hasPrefix:@"\""] &&

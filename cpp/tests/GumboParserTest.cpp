@@ -322,14 +322,15 @@ TEST(GumboParserTest, SpanRemappings) {
       GumboParser::normalizeHtml("<span style=\"font-size: 20px;\">x</span>"),
       "<span style=\"font-size: 20px\">x</span>");
 
-  // Font family: first family of the stack, unquoted, quoted again if it
-  // contains spaces
+  // Font family: the whole stack is passed through, picking the family is up
+  // to the parsers
   EXPECT_EQ(GumboParser::normalizeHtml(
                 "<span style=\"font-family: Roboto, sans-serif\">x</span>"),
-            "<span style=\"font-family: Roboto\">x</span>");
-  EXPECT_EQ(GumboParser::normalizeHtml(
-                "<span style='font-family: \"Open Sans\", Arial'>x</span>"),
-            "<span style=\"font-family: 'Open Sans'\">x</span>");
+            "<span style=\"font-family: Roboto, sans-serif\">x</span>");
+  EXPECT_EQ(
+      GumboParser::normalizeHtml(
+          "<span style='font-family: \"SWM, Inc\", Arial'>x</span>"),
+      "<span style=\"font-family: &quot;SWM, Inc&quot;, Arial\">x</span>");
   EXPECT_EQ(GumboParser::normalizeHtml(
                 "<span style=\"font-family: 'Open Sans'\">x</span>"),
             "<span style=\"font-family: 'Open Sans'\">x</span>");
@@ -349,12 +350,7 @@ TEST(GumboParserTest, SpanRemappings) {
   EXPECT_EQ(
       GumboParser::normalizeHtml("<span style=\"font-family: &quot;Black &amp; "
                                  "White&quot;\">x</span>"),
-      "<span style=\"font-family: 'Black &amp; White'\">x</span>");
-
-  // Family names with single quotes can't be quoted, so they're dropped
-  EXPECT_EQ(GumboParser::normalizeHtml(
-                "<span style=\"font-family: &quot;O'Brien&quot;\">x</span>"),
-            "x");
+      "<span style=\"font-family: &quot;Black &amp; White&quot;\">x</span>");
 }
 
 TEST(GumboParserTest, EnrichedTagRemappings) {
@@ -809,12 +805,12 @@ TEST(GumboParserTest, NestedSpans) {
                 "<span>A<span style=\"color: red\">B</span>C</span>"),
             "A<span style=\"color: red\">B</span>C");
 
-  // Inherited values are escaped and quoted like the wrapper's own ones
+  // Inherited values are escaped like the wrapper's own ones
   EXPECT_EQ(GumboParser::normalizeHtml(
                 "<span style='color: a\"b'>A<span style=\"font-family: "
                 "&quot;Open Sans&quot;\">B</span></span>"),
             "<span style=\"color: a&quot;b\">A</span><span style=\"color: "
-            "a&quot;b; font-family: 'Open Sans'\">B</span>");
+            "a&quot;b; font-family: &quot;Open Sans&quot;\">B</span>");
 
   // Context reaches list items and blockquotes
   EXPECT_EQ(GumboParser::normalizeHtml(

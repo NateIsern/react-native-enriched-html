@@ -309,34 +309,8 @@ static const char *find_css_value(const char *style, size_t style_len,
   return NULL;
 }
 
-/* First family of a font stack, unquoted: `"Open Sans", Arial` → Open Sans. */
-static const char *first_font_family(const char *val, size_t *val_len) {
-  if (!val)
-    return NULL;
-  const char *start = val;
-  const char *end = val + *val_len;
-  const char *comma = memchr(start, ',', *val_len);
-  if (comma)
-    end = comma;
-  while (start < end && isspace((unsigned char)*start))
-    start++;
-  while (end > start && isspace((unsigned char)*(end - 1)))
-    end--;
-  // strip the quotes if the value is quoted
-  if (end - start >= 2 && (*start == '\'' || *start == '"') &&
-      *(end - 1) == *start) {
-    start++;
-    end--;
-  }
-  *val_len = (size_t)(end - start);
-  if (memchr(start, '\'', *val_len))
-    return NULL;
-  return start;
-}
-
 static void append_style_prop(buffer_t *out, const char *prefix,
-                              const char *val, size_t val_len,
-                              const char *suffix, bool *first) {
+                              const char *val, size_t val_len, bool *first) {
   if (!*first)
     buffer_append_str(out, "; ");
   *first = false;
@@ -353,7 +327,6 @@ static void append_style_prop(buffer_t *out, const char *prefix,
     else
       buffer_append(out, &val[i], 1);
   }
-  buffer_append_str(out, suffix);
 }
 
 static bool css_val_contains(const char *val, size_t val_len,
@@ -446,12 +419,8 @@ static css_styles_t parse_css_style(const char *style_value, size_t style_len) {
   }
   result.custom.font_size =
       find_custom_css_value(style_value, style_len, "font-size");
-  css_slice_t family =
+  result.custom.font_family =
       find_custom_css_value(style_value, style_len, "font-family");
-  family.val = first_font_family(family.val, &family.len);
-  if (!family.val)
-    family.len = 0;
-  result.custom.font_family = family;
 
   return result;
 }
@@ -498,20 +467,15 @@ static void emit_custom_style_open(buffer_t *out, custom_style_t s) {
   bool first = true;
   buffer_append_str(out, "<span style=\"");
   if (s.fg.len)
-    append_style_prop(out, "color: ", s.fg.val, s.fg.len, "", &first);
+    append_style_prop(out, "color: ", s.fg.val, s.fg.len, &first);
   if (s.bg.len)
-    append_style_prop(out, "background-color: ", s.bg.val, s.bg.len, "",
-                      &first);
+    append_style_prop(out, "background-color: ", s.bg.val, s.bg.len, &first);
   if (s.font_size.len)
-    append_style_prop(out, "font-size: ", s.font_size.val, s.font_size.len, "",
+    append_style_prop(out, "font-size: ", s.font_size.val, s.font_size.len,
                       &first);
-  if (s.font_family.len) {
-    // quote family names with spaces
-    bool quote = memchr(s.font_family.val, ' ', s.font_family.len) != NULL;
-    append_style_prop(
-        out, quote ? "font-family: '" : "font-family: ", s.font_family.val,
-        s.font_family.len, quote ? "'" : "", &first);
-  }
+  if (s.font_family.len)
+    append_style_prop(out, "font-family: ", s.font_family.val,
+                      s.font_family.len, &first);
   buffer_append_str(out, "\">");
 }
 
@@ -726,9 +690,9 @@ static bool is_layout_whitespace(GumboNode *node) {
     return false;
   char buf[64];
   const char *parent_name = get_tag_name(node->parent, buf, sizeof(buf));
-  return parent_name && (has_block_or_bq_child(node->parent) ||
-                         (is_table_tag(parent_name) &&
-                          !is_table_text_tag(parent_name)));
+  return parent_name &&
+         (has_block_or_bq_child(node->parent) ||
+          (is_table_tag(parent_name) && !is_table_text_tag(parent_name)));
 }
 
 /**
