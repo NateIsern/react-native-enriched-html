@@ -326,13 +326,15 @@ static void append_style_prop(buffer_t *out, const char *prefix,
     buffer_append_str(out, "; ");
   *first = false;
   buffer_append_str(out, prefix);
-  // only `&` and `"` are significant inside a double-quoted attribute
-  // and need to be escaped
   for (size_t i = 0; i < val_len; i++) {
     if (val[i] == '&')
       buffer_append_str(out, "&amp;");
     else if (val[i] == '"')
       buffer_append_str(out, "&quot;");
+    else if (val[i] == '<')
+      buffer_append_str(out, "&lt;");
+    else if (val[i] == '>')
+      buffer_append_str(out, "&gt;");
     else
       buffer_append(out, &val[i], 1);
   }
